@@ -674,11 +674,14 @@ export class DatabaseStorage implements IStorage {
 
   // Member Content methods
   async getMemberContent(userId: number, accessLevel?: number): Promise<MemberContent[]> {
-    let query = db.select().from(memberContent).where(eq(memberContent.userId, userId));
     if (accessLevel !== undefined) {
-      query = query.where(and(eq(memberContent.userId, userId), eq(memberContent.requiredAccessLevel, accessLevel)));
+      return await db.select().from(memberContent)
+        .where(and(eq(memberContent.userId, userId), eq(memberContent.requiredAccessLevel, accessLevel)))
+        .orderBy(memberContent.order, desc(memberContent.createdAt));
     }
-    return await query.orderBy(memberContent.order, desc(memberContent.createdAt));
+    return await db.select().from(memberContent)
+      .where(eq(memberContent.userId, userId))
+      .orderBy(memberContent.order, desc(memberContent.createdAt));
   }
 
   async getMemberContentItem(id: number): Promise<MemberContent | undefined> {
@@ -706,11 +709,14 @@ export class DatabaseStorage implements IStorage {
 
   // Member Progress methods
   async getMemberProgress(userId: number, contentId?: number): Promise<MemberProgress[]> {
-    let query = db.select().from(memberProgress).where(eq(memberProgress.userId, userId));
     if (contentId) {
-      query = query.where(and(eq(memberProgress.userId, userId), eq(memberProgress.contentId, contentId)));
+      return await db.select().from(memberProgress)
+        .where(and(eq(memberProgress.userId, userId), eq(memberProgress.contentId, contentId)))
+        .orderBy(desc(memberProgress.lastAccessedAt));
     }
-    return await query.orderBy(desc(memberProgress.lastAccessedAt));
+    return await db.select().from(memberProgress)
+      .where(eq(memberProgress.userId, userId))
+      .orderBy(desc(memberProgress.lastAccessedAt));
   }
 
   async createOrUpdateProgress(progress: InsertMemberProgress): Promise<MemberProgress> {
@@ -747,11 +753,13 @@ export class DatabaseStorage implements IStorage {
 
   // Community Forum methods
   async getForumPosts(accessLevel?: number): Promise<CommunityForum[]> {
-    let query = db.select().from(communityForum);
     if (accessLevel !== undefined) {
-      query = query.where(eq(communityForum.requiredAccessLevel, accessLevel));
+      return await db.select().from(communityForum)
+        .where(eq(communityForum.requiredAccessLevel, accessLevel))
+        .orderBy(desc(communityForum.isPinned), desc(communityForum.createdAt));
     }
-    return await query.orderBy(desc(communityForum.isPinned), desc(communityForum.createdAt));
+    return await db.select().from(communityForum)
+      .orderBy(desc(communityForum.isPinned), desc(communityForum.createdAt));
   }
 
   async getForumPost(id: number): Promise<CommunityForum | undefined> {
@@ -882,7 +890,7 @@ export class DatabaseStorage implements IStorage {
 
   // Webinar Registration methods
   async getWebinarRegistrations(webinarId: number): Promise<WebinarRegistration[]> {
-    return await db.select().from(webinarRegistrations).where(eq(webinarRegistrations.webinarId, webinarId)).orderBy(desc(webinarRegistrations.createdAt));
+    return await db.select().from(webinarRegistrations).where(eq(webinarRegistrations.webinarId, webinarId)).orderBy(desc(webinarRegistrations.registeredAt));
   }
 
   async getWebinarRegistration(id: number): Promise<WebinarRegistration | undefined> {
