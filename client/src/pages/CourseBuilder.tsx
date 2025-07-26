@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import { toast } from "sonner";
 import { 
   Plus, 
@@ -57,11 +59,41 @@ import {
   Layers,
   Monitor,
   Smartphone,
-  Tablet
+  Tablet,
+  CheckCircle,
+  AlertCircle,
+  RefreshCw,
+  Loader2,
+  CloudUpload,
+  FolderOpen,
+  FileVideo,
+  FileAudio,
+  FilePdf,
+  Database,
+  PieChart,
+  LineChart,
+  Camera,
+  Palette,
+  Wand2
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
-// Enhanced Types with Professional LMS Features
+// Enhanced Types with all professional features
+interface VideoSettings {
+  provider: 'youtube' | 'vimeo' | 'wistia' | 'jwplayer' | 'videojs' | 'cloudinary' | 'bunny' | 'mux';
+  url: string;
+  thumbnail?: string;
+  duration?: number;
+  quality: '480p' | '720p' | '1080p' | '4k';
+  autoplay: boolean;
+  controls: boolean;
+  playbackSpeed: boolean;
+  chapters: boolean;
+  captions: boolean;
+  downloadable: boolean;
+  analytics: boolean;
+}
+
 interface Lesson {
   id: string;
   title: string;
@@ -69,7 +101,7 @@ interface Lesson {
   content: string;
   duration: number;
   isLocked: boolean;
-  videoUrl?: string;
+  videoSettings?: VideoSettings;
   htmlContent?: string;
   externalUrl?: string;
   audioUrl?: string;
@@ -97,37 +129,9 @@ interface Lesson {
   notes: Note[];
   engagement: EngagementMetrics;
   accessibility: AccessibilityFeatures;
-}
-
-interface Subtitle {
-  id: string;
-  language: string;
-  url: string;
-}
-
-interface Bookmark {
-  id: string;
-  time: number;
-  description: string;
-}
-
-interface Note {
-  id: string;
-  time: number;
-  content: string;
-}
-
-interface EngagementMetrics {
-  views: number;
-  averageWatchTime: number;
-  completionRate: number;
-  interactions: number;
-}
-
-interface AccessibilityFeatures {
-  closedCaptioning: boolean;
-  screenReaderSupport: boolean;
-  keyboardNavigation: boolean;
+  thumbnail?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface Resource {
@@ -141,60 +145,6 @@ interface Resource {
   downloadCount: number;
   isRequired: boolean;
   category: string;
-}
-
-interface Subtitle {
-  id: string;
-  language: string;
-  url: string;
-  default: boolean;
-}
-
-interface Bookmark {
-  id: string;
-  timestamp: number;
-  title: string;
-  description: string;
-  userId: string;
-}
-
-interface Note {
-  id: string;
-  timestamp: number;
-  content: string;
-  isPrivate: boolean;
-  userId: string;
-  replies: Note[];
-}
-
-interface EngagementMetrics {
-  views: number;
-  completions: number;
-  averageWatchTime: number;
-  dropOffPoints: number[];
-  interactions: number;
-  rating: number;
-  reviews: Review[];
-}
-
-interface Review {
-  id: string;
-  userId: string;
-  userName: string;
-  rating: number;
-  comment: string;
-  date: Date;
-  helpful: number;
-}
-
-interface AccessibilityFeatures {
-  closedCaptions: boolean;
-  audioDescription: boolean;
-  transcripts: boolean;
-  keyboardNavigation: boolean;
-  screenReaderCompatible: boolean;
-  highContrast: boolean;
-  fontSize: 'small' | 'medium' | 'large' | 'extra-large';
 }
 
 interface QuizQuestion {
@@ -251,6 +201,60 @@ interface RubricCriteria {
   description: string;
 }
 
+interface Subtitle {
+  id: string;
+  language: string;
+  url: string;
+  default: boolean;
+}
+
+interface Bookmark {
+  id: string;
+  timestamp: number;
+  title: string;
+  description: string;
+  userId: string;
+}
+
+interface Note {
+  id: string;
+  timestamp: number;
+  content: string;
+  isPrivate: boolean;
+  userId: string;
+  replies: Note[];
+}
+
+interface EngagementMetrics {
+  views: number;
+  completions: number;
+  averageWatchTime: number;
+  dropOffPoints: number[];
+  interactions: number;
+  rating: number;
+  reviews: Review[];
+}
+
+interface Review {
+  id: string;
+  userId: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  date: Date;
+  helpful: number;
+}
+
+interface AccessibilityFeatures {
+  closedCaptions: boolean;
+  audioDescription: boolean;
+  transcripts: boolean;
+  keyboardNavigation: boolean;
+  screenReaderCompatible: boolean;
+  highContrast: boolean;
+  fontSize: 'small' | 'medium' | 'large' | 'extra-large';
+}
+
 interface Module {
   id: string;
   title: string;
@@ -263,6 +267,7 @@ interface Module {
   learningObjectives: string[];
   prerequisites: string[];
   completionCriteria: string;
+  thumbnail?: string;
 }
 
 interface Course {
@@ -409,1066 +414,6 @@ interface CourseAnalytics {
   totalRevenue: number;
 }
 
-// Professional AI Content Studio Component
-const AIContentEditor: React.FC<{
-  isOpen: boolean;
-  onClose: () => void;
-  lesson: Lesson | null;
-  onSave: (lesson: Lesson) => void;
-}> = ({ isOpen, onClose, lesson, onSave }) => {
-  const [editingLesson, setEditingLesson] = useState<Lesson | null>(lesson);
-  const [aiGenerating, setAiGenerating] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [selectedAITool, setSelectedAITool] = useState('content');
-  const [contentHistory, setContentHistory] = useState<string[]>([]);
-  const [activeTemplate, setActiveTemplate] = useState<string>('');
-  const [voiceSettings, setVoiceSettings] = useState({
-    language: 'en-US',
-    speed: 1.0,
-    voice: 'female'
-  });
-
-  const handleSave = () => {
-    if (editingLesson) {
-      onSave(editingLesson);
-      toast.success("Lesson content saved successfully!");
-      onClose();
-    }
-  };
-
-  const generateAIContent = async () => {
-    if (!aiPrompt.trim()) {
-      toast.error("Please enter a prompt for AI generation");
-      return;
-    }
-
-    setAiGenerating(true);
-    
-    try {
-      // Real AI content generation with comprehensive templates
-      const response = await fetch('/api/ai/generate-content', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: aiPrompt,
-          type: selectedAITool,
-          lesson: editingLesson,
-          template: activeTemplate
-        })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        
-        if (editingLesson) {
-          let generatedContent = '';
-          
-          switch (selectedAITool) {
-            case 'content':
-              generatedContent = `# ${editingLesson.title}\n\n## Course Overview\n${aiPrompt}\n\n## Learning Objectives\nBy the end of this lesson, you will be able to:\n\n${result.objectives?.map((obj: string, i: number) => `${i + 1}. ${obj}`).join('\n') || '- Master the core concepts\n- Apply practical techniques\n- Solve real-world problems'}\n\n## Content Structure\n\n### Introduction\n${result.introduction || 'Welcome to this comprehensive lesson where we will explore the fundamental concepts and practical applications.'}\n\n### Main Content\n\n#### Section 1: Fundamentals\n${result.fundamentals || '**Core Concepts:**\n- Essential principles and theories\n- Historical context and evolution\n- Key terminology and definitions\n- Industry standards and best practices'}\n\n#### Section 2: Practical Application\n${result.practical || '**Hands-On Learning:**\n- Step-by-step implementation guide\n- Real-world case studies and examples\n- Common challenges and solutions\n- Tools and resources for success'}\n\n#### Section 3: Advanced Techniques\n${result.advanced || '**Expert-Level Strategies:**\n- Advanced methodologies and frameworks\n- Optimization techniques and performance tuning\n- Integration with other systems and technologies\n- Future trends and emerging practices'}\n\n### Interactive Elements\n\n#### Knowledge Check\n${result.knowledgeCheck || '**Quick Assessment:**\n1. What are the three main principles we covered?\n2. How would you apply this in a real-world scenario?\n3. What are the potential challenges and how would you overcome them?'}\n\n#### Practical Exercise\n${result.exercise || '**Hands-On Activity:**\nComplete the following exercise to reinforce your learning:\n- Set up your environment\n- Follow the step-by-step guide\n- Test your implementation\n- Document your results'}\n\n### Resources and Next Steps\n\n#### Additional Resources\n${result.resources || '- **Documentation:** Official guides and references\n- **Tools:** Recommended software and platforms\n- **Community:** Forums, groups, and expert networks\n- **Continued Learning:** Advanced courses and certifications'}\n\n#### Action Items\n- [ ] Complete the hands-on exercise\n- [ ] Review additional resources\n- [ ] Apply concepts to your current project\n- [ ] Share your progress with the community\n- [ ] Prepare for the next lesson\n\n### Summary\n${result.summary || `In this lesson, we covered the essential aspects of ${editingLesson.title.toLowerCase()}. You now have the knowledge and tools to implement these concepts in your own work. Remember to practice regularly and stay updated with the latest developments in the field.`}\n\n---\n\n*🤖 Generated with AI on ${new Date().toLocaleDateString()} | Prompt: "${aiPrompt}"*\n*✨ Enhanced with professional course design patterns*`;
-              break;
-          case 'quiz':
-            const quizQuestions = result.questions || [
-              {
-                id: `q-${Date.now()}-1`,
-                question: `What is the main concept covered in ${editingLesson.title}?`,
-                type: 'multiple-choice',
-                options: [
-                  'The foundational principles and core concepts',
-                  'Advanced implementation strategies only',
-                  'Historical background information',
-                  'Industry trends and predictions'
-                ],
-                correctAnswer: 'The foundational principles and core concepts',
-                explanation: 'This lesson focuses primarily on establishing a solid understanding of the fundamental concepts before moving to advanced applications.',
-                points: 10,
-                difficulty: 'medium',
-                tags: ['fundamentals', 'concepts'],
-                timeLimit: 60,
-                hints: ['Think about what we covered in the introduction section', 'Consider the learning objectives stated at the beginning'],
-                feedback: {
-                  correct: 'Excellent! You correctly identified the main focus of this lesson.',
-                  incorrect: 'Not quite right. Review the lesson introduction and learning objectives.',
-                  partial: 'You\'re on the right track, but consider the primary emphasis of the content.'
-                }
-              },
-              {
-                id: `q-${Date.now()}-2`,
-                question: `Which of the following best describes the practical application approach taught in this lesson?`,
-                type: 'multiple-choice',
-                options: [
-                  'Theoretical analysis only',
-                  'Step-by-step implementation with real-world examples',
-                  'Historical case studies exclusively',
-                  'Future predictions and speculation'
-                ],
-                correctAnswer: 'Step-by-step implementation with real-world examples',
-                explanation: 'The lesson emphasizes hands-on learning through practical implementation with concrete examples.',
-                points: 10,
-                difficulty: 'medium',
-                tags: ['practical', 'implementation'],
-                timeLimit: 90,
-                hints: ['Look at the practical application section', 'Consider what type of learning activities were included'],
-                feedback: {
-                  correct: 'Perfect! You understand the practical focus of this lesson.',
-                  incorrect: 'Review the practical application section to see the hands-on approach used.',
-                  partial: 'You\'re getting closer. Focus on the implementation methodology.'
-                }
-              },
-              {
-                id: `q-${Date.now()}-3`,
-                question: `True or False: The principles taught in ${editingLesson.title} can be applied immediately in real-world scenarios.`,
-                type: 'true-false',
-                correctAnswer: 'true',
-                explanation: 'Yes, the lesson is designed to provide immediately applicable knowledge and skills that can be implemented right away.',
-                points: 5,
-                difficulty: 'easy',
-                tags: ['application', 'practical'],
-                timeLimit: 30,
-                hints: ['Consider the practical exercises included in the lesson'],
-                feedback: {
-                  correct: 'Correct! The lesson content is designed for immediate practical application.',
-                  incorrect: 'Actually, this lesson provides immediately usable skills and knowledge.'
-                }
-              },
-              {
-                id: `q-${Date.now()}-4`,
-                question: `Fill in the blank: The three main sections of this lesson are Fundamentals, _______, and Advanced Techniques.`,
-                type: 'fill-blank',
-                correctAnswer: 'Practical Application',
-                explanation: 'The lesson follows a structured approach: Fundamentals, Practical Application, and Advanced Techniques.',
-                points: 8,
-                difficulty: 'easy',
-                tags: ['structure', 'organization'],
-                timeLimit: 45,
-                hints: ['Think about the hands-on section', 'What comes between theory and advanced concepts?'],
-                feedback: {
-                  correct: 'Great! You remembered the lesson structure correctly.',
-                  incorrect: 'Review the lesson structure - it follows a logical progression from basics to practice to advanced concepts.'
-                }
-              },
-              {
-                id: `q-${Date.now()}-5`,
-                question: `Which advanced technique is most emphasized for optimization and performance improvement?`,
-                type: 'multiple-choice',
-                options: [
-                  'Basic troubleshooting methods',
-                  'Performance tuning and optimization frameworks',
-                  'Historical analysis approaches',
-                  'Standard implementation procedures'
-                ],
-                correctAnswer: 'Performance tuning and optimization frameworks',
-                explanation: 'The advanced section specifically focuses on optimization methodologies and performance improvement frameworks.',
-                points: 15,
-                difficulty: 'hard',
-                tags: ['advanced', 'optimization', 'performance'],
-                timeLimit: 120,
-                hints: ['Look at the advanced techniques section', 'Consider what goes beyond basic implementation'],
-                feedback: {
-                  correct: 'Excellent! You identified the key advanced optimization concepts.',
-                  incorrect: 'Review the advanced techniques section focusing on performance and optimization methods.',
-                  partial: 'You\'re thinking about the right area. Focus specifically on optimization frameworks.'
-                }
-              }
-            ];
-            
-            generatedContent = JSON.stringify({
-              quiz: {
-                id: `quiz-${Date.now()}`,
-                title: `${editingLesson.title} - Knowledge Assessment`,
-                description: `Comprehensive quiz covering all key concepts from the ${editingLesson.title} lesson`,
-                instructions: 'Answer all questions to the best of your ability. You have unlimited attempts, but try to complete it in one go for the best learning experience.',
-                timeLimit: 600, // 10 minutes
-                passingScore: 70,
-                randomizeQuestions: true,
-                showResults: true,
-                allowReview: true,
-                questions: quizQuestions,
-                settings: {
-                  allowBacktracking: true,
-                  showProgress: true,
-                  preventCheating: false,
-                  showCorrectAnswers: true,
-                  showExplanations: true,
-                  allowMultipleAttempts: true,
-                  trackTime: true
-                }
-              }
-            }, null, 2);
-            break;
-          case 'objectives':
-            const objectives = result.objectives || [
-              `Master the fundamental concepts and principles of ${editingLesson.title.toLowerCase()}`,
-              `Apply theoretical knowledge through practical, hands-on implementation`,
-              `Analyze real-world scenarios and develop effective solution strategies`,
-              `Evaluate different approaches and select optimal methodologies`,
-              `Create comprehensive implementations using industry best practices`,
-              `Troubleshoot common issues and implement preventive measures`,
-              `Integrate learned concepts with existing knowledge and systems`,
-              `Demonstrate proficiency through practical exercises and assessments`
-            ];
-            
-            setEditingLesson(prev => prev ? { 
-              ...prev, 
-              learningObjectives: objectives,
-              description: result.description || `Enhanced learning objectives for ${editingLesson.title}`,
-              tags: [...(prev.tags || []), 'ai-enhanced', 'comprehensive', 'practical']
-            } : null);
-            
-            toast.success("Advanced learning objectives generated with AI!");
-            setAiGenerating(false);
-            return;
-            
-          case 'assessment':
-            const assessmentContent = {
-              title: `${editingLesson.title} - Comprehensive Assessment`,
-              type: 'mixed-assessment',
-              components: [
-                {
-                  type: 'knowledge-check',
-                  questions: result.knowledgeQuestions || 5,
-                  format: 'multiple-choice',
-                  weight: 30
-                },
-                {
-                  type: 'practical-exercise',
-                  description: result.practicalExercise || 'Hands-on implementation project',
-                  format: 'project-submission',
-                  weight: 40
-                },
-                {
-                  type: 'reflection',
-                  description: 'Written reflection on learning and application',
-                  format: 'essay',
-                  weight: 20
-                },
-                {
-                  type: 'peer-review',
-                  description: 'Review and provide feedback on peer submissions',
-                  format: 'structured-review',
-                  weight: 10
-                }
-              ],
-              rubric: result.rubric || {
-                'Understanding': 'Demonstrates clear comprehension of concepts',
-                'Application': 'Successfully applies knowledge to practical scenarios',
-                'Analysis': 'Shows critical thinking and problem-solving skills',
-                'Communication': 'Clearly expresses ideas and solutions',
-                'Innovation': 'Demonstrates creativity and original thinking'
-              },
-              passingCriteria: {
-                minimumScore: 70,
-                requiredComponents: ['knowledge-check', 'practical-exercise'],
-                timeLimit: 7200 // 2 hours
-              }
-            };
-            
-            generatedContent = JSON.stringify(assessmentContent, null, 2);
-            break;
-            
-          case 'resources':
-            const resourcePack = {
-              title: `${editingLesson.title} - Learning Resource Pack`,
-              categories: {
-                'Essential Reading': result.reading || [
-                  'Core concepts documentation',
-                  'Industry best practices guide',
-                  'Case study collection'
-                ],
-                'Tools & Software': result.tools || [
-                  'Recommended development environment',
-                  'Essential plugins and extensions',
-                  'Testing and validation tools'
-                ],
-                'Templates & Examples': result.templates || [
-                  'Starter project templates',
-                  'Code examples and snippets',
-                  'Configuration samples'
-                ],
-                'Community & Support': result.community || [
-                  'Official forums and discussion groups',
-                  'Expert networks and mentorship',
-                  'Peer learning opportunities'
-                ],
-                'Advanced Learning': result.advanced || [
-                  'Specialized courses and certifications',
-                  'Research papers and academic resources',
-                  'Conference talks and presentations'
-                ]
-              }
-            };
-            
-            generatedContent = JSON.stringify(resourcePack, null, 2);
-            break;
-        }
-          
-          // Store in content history for undo/redo
-          setContentHistory(prev => [...prev, editingLesson.content || '']);
-          
-          setEditingLesson(prev => prev ? {
-            ...prev,
-            content: generatedContent,
-            htmlContent: editingLesson.type === 'html' ? generatedContent : prev.htmlContent,
-            lastModified: new Date(),
-            aiGenerated: true,
-            aiPrompt: aiPrompt
-          } : null);
-          
-          toast.success(`AI ${selectedAITool} generated successfully! 🚀`);
-        }
-      } else {
-        // Fallback to local generation if API is not available
-        await generateFallbackContent();
-      }
-    } catch (error) {
-      console.warn('AI API not available, using fallback generation');
-      await generateFallbackContent();
-    }
-    
-    setAiGenerating(false);
-  };
-
-  const generateFallbackContent = async () => {
-    // Comprehensive fallback generation
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        if (editingLesson) {
-          let generatedContent = '';
-          
-          switch (selectedAITool) {
-            case 'content':
-              generatedContent = generateComprehensiveContent();
-              break;
-            case 'quiz':
-              generatedContent = generateAdvancedQuiz();
-              break;
-            case 'objectives':
-              const objectives = generateLearningObjectives();
-              setEditingLesson(prev => prev ? { ...prev, learningObjectives: objectives } : null);
-              toast.success("Learning objectives generated!");
-              resolve();
-              return;
-            case 'assessment':
-              generatedContent = generateAssessmentStructure();
-              break;
-            case 'resources':
-              generatedContent = generateResourcePack();
-              break;
-            default:
-              generatedContent = generateComprehensiveContent();
-          }
-          
-          setContentHistory(prev => [...prev, editingLesson.content || '']);
-          setEditingLesson(prev => prev ? {
-            ...prev,
-            content: generatedContent,
-            htmlContent: editingLesson.type === 'html' ? generatedContent : prev.htmlContent
-          } : null);
-        }
-        resolve();
-      }, 1500);
-    });
-  };
-
-  const generateComprehensiveContent = () => {
-    return `# ${editingLesson?.title}\n\n## 🎯 Course Overview\n${aiPrompt}\n\n## 📚 Learning Objectives\nBy completing this lesson, you will be able to:\n\n1. **Master Core Concepts** - Understand fundamental principles and theories\n2. **Apply Practical Skills** - Implement knowledge in real-world scenarios\n3. **Solve Complex Problems** - Develop critical thinking and analytical abilities\n4. **Create Professional Solutions** - Build industry-standard implementations\n5. **Optimize Performance** - Apply advanced techniques for efficiency\n6. **Integrate Systems** - Connect with existing tools and workflows\n\n## 🚀 Getting Started\n\n### Prerequisites\n- Basic understanding of the subject area\n- Access to required tools and resources\n- Commitment to hands-on practice\n- Open mindset for continuous learning\n\n### What You'll Need\n- Computer with internet connection\n- Recommended software (links provided below)\n- Note-taking materials\n- Practice environment setup\n\n## 📖 Core Content\n\n### Section 1: Foundations\n\n#### Understanding the Basics\nLet's start with the fundamental concepts that form the backbone of ${editingLesson?.title.toLowerCase()}:\n\n**Key Principles:**\n- Core theoretical frameworks\n- Industry standards and best practices\n- Common terminology and definitions\n- Historical context and evolution\n\n**Why This Matters:**\nUnderstanding these foundations is crucial because they provide the building blocks for all advanced concepts we'll explore later.\n\n#### Real-World Context\n${aiPrompt}\n\nThis knowledge directly applies to:\n- Professional development scenarios\n- Industry problem-solving\n- Career advancement opportunities\n- Personal project enhancement\n\n### Section 2: Practical Implementation\n\n#### Step-by-Step Guide\n\n**Phase 1: Planning and Preparation**\n1. Assess your current knowledge level\n2. Set specific learning goals\n3. Gather necessary resources\n4. Create a practice schedule\n\n**Phase 2: Hands-On Practice**\n1. Follow guided examples\n2. Complete practice exercises\n3. Experiment with variations\n4. Document your progress\n\n**Phase 3: Application and Integration**\n1. Apply to real projects\n2. Combine with existing skills\n3. Share with community\n4. Seek feedback and iterate\n\n#### Interactive Elements\n\n**🎮 Practice Exercise:**\nTry implementing the concepts we've covered:\n\n\`\`\`\n// Example implementation\n// Replace this with your own code\nfunction practiceExample() {\n  // Your implementation here\n  return \"Success!\";\n}\n\`\`\`\n\n**💡 Pro Tips:**\n- Start small and build complexity gradually\n- Test frequently and debug systematically\n- Document your learning process\n- Connect with other learners\n\n### Section 3: Advanced Techniques\n\n#### Expert-Level Strategies\nNow that you've mastered the basics, let's explore advanced concepts:\n\n**Performance Optimization:**\n- Efficiency improvements\n- Resource management\n- Scalability considerations\n- Monitoring and analytics\n\n**Integration Patterns:**\n- System connectivity\n- Data flow management\n- Error handling strategies\n- Security considerations\n\n#### Troubleshooting Guide\n\n**Common Issues and Solutions:**\n\n| Problem | Cause | Solution |\n|---------|-------|----------|\n| Performance lag | Resource constraints | Optimize algorithms and data structures |\n| Integration failures | API mismatches | Verify endpoints and data formats |\n| Security vulnerabilities | Inadequate validation | Implement comprehensive input sanitization |\n\n## 🎯 Knowledge Check\n\n### Quick Assessment\n1. **What are the three main phases of implementation?**\n   - Planning and Preparation\n   - Hands-On Practice\n   - Application and Integration\n\n2. **Why is foundation knowledge important?**\n   - Provides building blocks for advanced concepts\n   - Ensures proper understanding of principles\n   - Enables effective problem-solving\n\n3. **What should you focus on for optimization?**\n   - Performance and efficiency\n   - Resource management\n   - Scalability planning\n\n## 🛠️ Practical Exercise\n\n### Your Mission\nCreate a comprehensive implementation that demonstrates:\n- Core concept understanding\n- Practical application skills\n- Problem-solving abilities\n- Integration capabilities\n\n### Submission Requirements\n1. **Documentation** - Clear explanation of your approach\n2. **Implementation** - Working solution with comments\n3. **Testing** - Verification of functionality\n4. **Reflection** - Analysis of learning process\n\n## 📚 Additional Resources\n\n### Essential Reading\n- 📖 [Official Documentation](https://example.com/docs)\n- 📊 [Best Practices Guide](https://example.com/best-practices)\n- 🎥 [Video Tutorial Series](https://example.com/videos)\n\n### Tools and Software\n- 🔧 [Development Environment](https://example.com/ide)\n- 🧪 [Testing Framework](https://example.com/testing)\n- 📈 [Analytics Platform](https://example.com/analytics)\n\n### Community and Support\n- 💬 [Discussion Forum](https://example.com/forum)\n- 👥 [Study Groups](https://example.com/groups)\n- 🎓 [Expert Mentorship](https://example.com/mentors)\n\n## 🎉 Next Steps\n\n### Immediate Actions\n- [ ] Complete the practical exercise\n- [ ] Review additional resources\n- [ ] Join the community discussion\n- [ ] Plan your next learning goal\n\n### Long-term Development\n- [ ] Apply concepts to real projects\n- [ ] Explore advanced specializations\n- [ ] Contribute to open-source projects\n- [ ] Mentor other learners\n\n## 💡 Key Takeaways\n\n> **Remember:** Learning is a continuous journey. The concepts covered in this lesson provide a solid foundation, but true mastery comes through consistent practice and real-world application.\n\n### Success Metrics\n- ✅ Understanding of core concepts\n- ✅ Ability to implement solutions\n- ✅ Problem-solving confidence\n- ✅ Integration capabilities\n\n---\n\n🤖 **AI-Generated Content** | Created on ${new Date().toLocaleDateString()}\n✨ **Enhanced with Professional Course Design Patterns**\n📝 **Based on Prompt:** "${aiPrompt}"\n\n*Continue your learning journey with confidence and curiosity!*`;
-  };
-
-  const generateAdvancedQuiz = () => {
-    return JSON.stringify({
-      quiz: {
-        id: `quiz-${Date.now()}`,
-        title: `${editingLesson?.title} - Advanced Assessment`,
-        description: `Comprehensive evaluation covering all aspects of ${editingLesson?.title}`,
-        questions: [
-          {
-            id: '1',
-            question: `Which principle is most fundamental to ${editingLesson?.title}?`,
-            type: 'multiple-choice',
-            options: ['Basic implementation', 'Core theoretical framework', 'Advanced optimization', 'Integration patterns'],
-            correctAnswer: 'Core theoretical framework',
-            explanation: 'The theoretical framework provides the foundation for all other concepts.',
-            points: 10,
-            difficulty: 'medium'
-          },
-          {
-            id: '2',
-            question: 'Describe the three-phase implementation approach.',
-            type: 'essay',
-            correctAnswer: 'Planning and Preparation, Hands-On Practice, Application and Integration',
-            explanation: 'This structured approach ensures comprehensive learning and practical application.',
-            points: 15,
-            difficulty: 'hard'
-          }
-        ],
-        settings: {
-          timeLimit: 1800,
-          passingScore: 80,
-          allowMultipleAttempts: true,
-          showExplanations: true
-        }
-      }
-    }, null, 2);
-  };
-
-  const generateLearningObjectives = () => {
-    return [
-      `Demonstrate mastery of ${editingLesson?.title.toLowerCase()} fundamentals`,
-      'Apply theoretical knowledge to practical implementation scenarios',
-      'Analyze complex problems and develop systematic solution approaches',
-      'Evaluate different methodologies and select optimal strategies',
-      'Create professional-grade solutions using industry best practices',
-      'Integrate learned concepts with existing knowledge and systems',
-      'Troubleshoot common issues and implement preventive measures',
-      'Optimize performance and ensure scalability of solutions'
-    ];
-  };
-
-  const generateAssessmentStructure = () => {
-    return JSON.stringify({
-      assessment: {
-        title: `${editingLesson?.title} - Comprehensive Evaluation`,
-        components: [
-          { type: 'knowledge-test', weight: 30, questions: 10 },
-          { type: 'practical-project', weight: 50, duration: '2 hours' },
-          { type: 'peer-review', weight: 20, submissions: 2 }
-        ],
-        rubric: {
-          'Understanding': 'Demonstrates clear comprehension',
-          'Application': 'Successfully implements concepts',
-          'Innovation': 'Shows creative problem-solving'
-        }
-      }
-    }, null, 2);
-  };
-
-  const generateResourcePack = () => {
-    return JSON.stringify({
-      resources: {
-        title: `${editingLesson?.title} - Complete Resource Pack`,
-        categories: {
-          'Documentation': ['Official guides', 'API references', 'Best practices'],
-          'Tools': ['Development environment', 'Testing frameworks', 'Deployment tools'],
-          'Examples': ['Code samples', 'Project templates', 'Case studies'],
-          'Community': ['Forums', 'Expert networks', 'Study groups']
-        }
-      }
-    }, null, 2);
-  };
-
-  if (!isOpen || !editingLesson) return null;
-
-  return (
-    <div className="fixed inset-y-0 right-0 w-2/3 bg-white shadow-2xl z-50 border-l transform transition-transform duration-300 ease-in-out flex flex-col max-w-6xl">
-      {/* Enhanced Header */}
-      <div className="border-b p-6 bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center">
-              <Bot className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                🚀 AI Content Studio Pro
-                <Badge className="bg-purple-100 text-purple-700">Beta</Badge>
-              </h2>
-              <p className="text-gray-600">Editing: <span className="font-medium">{editingLesson.title}</span></p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Undo
-            </Button>
-            <Button onClick={handleSave} className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white">
-              <Save className="w-4 h-4 mr-2" />
-              Save & Apply
-            </Button>
-            <Button variant="ghost" onClick={onClose}>
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Professional AI Tools Panel */}
-      <div className="border-b p-6 bg-gradient-to-r from-indigo-50 to-purple-50">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-white" />
-          </div>
-          <h3 className="text-lg font-bold text-purple-900">Professional AI Content Generator</h3>
-          <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">Enterprise</Badge>
-        </div>
-        
-        {/* AI Tool Selection */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-          <Button
-            variant={selectedAITool === 'content' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSelectedAITool('content')}
-            className={selectedAITool === 'content' ? 'bg-purple-600 hover:bg-purple-700' : ''}
-          >
-            <FileText className="w-4 h-4 mr-2" />
-            Lesson Content
-          </Button>
-          <Button
-            variant={selectedAITool === 'quiz' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSelectedAITool('quiz')}
-            className={selectedAITool === 'quiz' ? 'bg-orange-600 hover:bg-orange-700' : ''}
-          >
-            <HelpCircle className="w-4 h-4 mr-2" />
-            Smart Quiz
-          </Button>
-          <Button
-            variant={selectedAITool === 'objectives' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSelectedAITool('objectives')}
-            className={selectedAITool === 'objectives' ? 'bg-green-600 hover:bg-green-700' : ''}
-          >
-            <Target className="w-4 h-4 mr-2" />
-            Learning Goals
-          </Button>
-          <Button
-            variant={selectedAITool === 'assessment' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSelectedAITool('assessment')}
-            className={selectedAITool === 'assessment' ? 'bg-blue-600 hover:bg-blue-700' : ''}
-          >
-            <Award className="w-4 h-4 mr-2" />
-            Assessment
-          </Button>
-        </div>
-
-        {/* Content Templates */}
-        <div className="mb-4">
-          <Label className="text-sm font-medium text-gray-700 mb-2 block">Content Template</Label>
-          <Select value={activeTemplate} onValueChange={setActiveTemplate}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Choose a professional template..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="comprehensive">📚 Comprehensive Course Content</SelectItem>
-              <SelectItem value="practical">🛠️ Hands-On Practical Guide</SelectItem>
-              <SelectItem value="theoretical">🧠 Theoretical Deep Dive</SelectItem>
-              <SelectItem value="case-study">📋 Case Study Analysis</SelectItem>
-              <SelectItem value="interactive">🎮 Interactive Learning Experience</SelectItem>
-              <SelectItem value="assessment">📊 Assessment & Evaluation</SelectItem>
-              <SelectItem value="beginner">🌱 Beginner-Friendly Introduction</SelectItem>
-              <SelectItem value="advanced">🚀 Advanced Professional Content</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* AI Prompt Input */}
-        <div className="space-y-3">
-          <Label className="text-sm font-medium text-gray-700">Describe Your Content Vision</Label>
-          <div className="relative">
-            <Textarea
-              placeholder="Describe exactly what you want the AI to create. Be specific about topics, learning outcomes, difficulty level, and target audience..."
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-              className="min-h-[100px] pr-16 resize-none"
-              rows={4}
-            />
-            <div className="absolute bottom-2 right-2 text-xs text-gray-500">
-              {aiPrompt.length}/1000
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <Button 
-              onClick={generateAIContent} 
-              disabled={aiGenerating || !aiPrompt.trim()}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex-1"
-            >
-              {aiGenerating ? (
-                <>
-                  <Bot className="w-5 h-5 mr-2 animate-spin" />
-                  AI is Creating Magic...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5 mr-2" />
-                  Generate Professional Content
-                </>
-              )}
-            </Button>
-            
-            <Button variant="outline" size="sm">
-              <Mic className="w-4 h-4 mr-2" />
-              Voice Input
-            </Button>
-          </div>
-        </div>
-
-        {/* AI Status & Progress */}
-        {aiGenerating && (
-          <div className="mt-4 p-4 bg-purple-100 rounded-lg">
-            <div className="flex items-center gap-3">
-              <Bot className="w-6 h-6 text-purple-600 animate-pulse" />
-              <div className="flex-1">
-                <div className="text-sm font-medium text-purple-900">AI Content Generation in Progress...</div>
-                <div className="text-xs text-purple-700">Creating professional-grade content tailored to your specifications</div>
-              </div>
-            </div>
-            <div className="mt-2 w-full bg-purple-200 rounded-full h-2">
-              <div className="bg-purple-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Content Editor */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {/* Lesson Settings */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>Lesson Title</Label>
-            <Input
-              value={editingLesson.title}
-              onChange={(e) => setEditingLesson(prev => prev ? { ...prev, title: e.target.value } : null)}
-            />
-          </div>
-          <div>
-            <Label>Lesson Type</Label>
-            <Select
-              value={editingLesson.type}
-              onValueChange={(value: any) => setEditingLesson(prev => prev ? { ...prev, type: value } : null)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="video">
-                  <div className="flex items-center gap-2">
-                    <Video className="w-4 h-4" />
-                    Video Lesson
-                  </div>
-                </SelectItem>
-                <SelectItem value="text">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Text Content
-                  </div>
-                </SelectItem>
-                <SelectItem value="html">
-                  <div className="flex items-center gap-2">
-                    <Code className="w-4 h-4" />
-                    HTML Content
-                  </div>
-                </SelectItem>
-                <SelectItem value="quiz">
-                  <div className="flex items-center gap-2">
-                    <HelpCircle className="w-4 h-4" />
-                    Quiz
-                  </div>
-                </SelectItem>
-                <SelectItem value="assignment">
-                  <div className="flex items-center gap-2">
-                    <Award className="w-4 h-4" />
-                    Assignment
-                  </div>
-                </SelectItem>
-                <SelectItem value="link">
-                  <div className="flex items-center gap-2">
-                    <ExternalLink className="w-4 h-4" />
-                    External Link
-                  </div>
-                </SelectItem>
-                <SelectItem value="audio">
-                  <div className="flex items-center gap-2">
-                    <Mic className="w-4 h-4" />
-                    Audio Lesson
-                  </div>
-                </SelectItem>
-                <SelectItem value="interactive">
-                  <div className="flex items-center gap-2">
-                    <Monitor className="w-4 h-4" />
-                    Interactive Content
-                  </div>
-                </SelectItem>
-                <SelectItem value="live-session">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Live Session
-                  </div>
-                </SelectItem>
-                <SelectItem value="workshop">
-                  <div className="flex items-center gap-2">
-                    <PenTool className="w-4 h-4" />
-                    Workshop
-                  </div>
-                </SelectItem>
-                 <SelectItem value="case-study">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Case Study
-                  </div>
-                </SelectItem>
-                <SelectItem value="simulation">
-                  <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4" />
-                    Simulation
-                  </div>
-                </SelectItem>
-                 <SelectItem value="assessment">
-                  <div className="flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4" />
-                    Assessment
-                  </div>
-                </SelectItem>
-                <SelectItem value="certification">
-                  <div className="flex items-center gap-2">
-                    <Award className="w-4 h-4" />
-                    Certification
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <Label>Duration (minutes)</Label>
-            <Input
-              type="number"
-              value={editingLesson.duration}
-              onChange={(e) => setEditingLesson(prev => prev ? { ...prev, duration: parseInt(e.target.value) || 0 } : null)}
-            />
-          </div>
-          <div>
-            <Label>Difficulty</Label>
-            <Select
-              value={editingLesson.difficulty}
-              onValueChange={(value: any) => setEditingLesson(prev => prev ? { ...prev, difficulty: value } : null)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="beginner">Beginner</SelectItem>
-                <SelectItem value="intermediate">Intermediate</SelectItem>
-                <SelectItem value="advanced">Advanced</SelectItem>
-                 <SelectItem value="expert">Expert</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center justify-between p-3 border rounded-lg">
-            <div>
-              <Label>Locked</Label>
-              <p className="text-xs text-gray-600">Require prerequisites</p>
-            </div>
-            <Switch
-              checked={editingLesson.isLocked}
-              onCheckedChange={(checked) => setEditingLesson(prev => prev ? { ...prev, isLocked: checked } : null)}
-            />
-          </div>
-        </div>
-
-        {/* Media URLs based on type */}
-        {editingLesson.type === 'video' && (
-          <div>
-            <Label>Video URL</Label>
-            <Input
-              placeholder="YouTube, Vimeo, or direct video URL"
-              value={editingLesson.videoUrl || ''}
-              onChange={(e) => setEditingLesson(prev => prev ? { ...prev, videoUrl: e.target.value } : null)}
-            />
-          </div>
-        )}
-
-        {editingLesson.type === 'audio' && (
-          <div>
-            <Label>Audio URL</Label>
-            <Input
-              placeholder="Direct audio file URL or podcast link"
-              value={editingLesson.audioUrl || ''}
-              onChange={(e) => setEditingLesson(prev => prev ? { ...prev, audioUrl: e.target.value } : null)}
-            />
-          </div>
-        )}
-
-        {editingLesson.type === 'link' && (
-          <div>
-            <Label>External URL</Label>
-            <Input
-              placeholder="https://example.com"
-              value={editingLesson.externalUrl || ''}
-              onChange={(e) => setEditingLesson(prev => prev ? { ...prev, externalUrl: e.target.value } : null)}
-            />
-          </div>
-        )}
-
-        <div>
-          <Label>Description</Label>
-          <Textarea
-            placeholder="Brief description of this lesson"
-            value={editingLesson.description}
-            onChange={(e) => setEditingLesson(prev => prev ? { ...prev, description: e.target.value } : null)}
-            rows={3}
-          />
-        </div>
-
-        {/* Learning Objectives */}
-        <div>
-          <Label>Learning Objectives</Label>
-          <div className="space-y-2">
-            {editingLesson.learningObjectives.map((objective, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  value={objective}
-                  onChange={(e) => {
-                    const newObjectives = [...editingLesson.learningObjectives];
-                    newObjectives[index] = e.target.value;
-                    setEditingLesson(prev => prev ? { ...prev, learningObjectives: newObjectives } : null);
-                  }}
-                  placeholder={`Learning objective ${index + 1}`}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const newObjectives = editingLesson.learningObjectives.filter((_, i) => i !== index);
-                    setEditingLesson(prev => prev ? { ...prev, learningObjectives: newObjectives } : null);
-                  }}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            ))}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const newObjectives = [...editingLesson.learningObjectives, ''];
-                setEditingLesson(prev => prev ? { ...prev, learningObjectives: newObjectives } : null);
-              }}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Objective
-            </Button>
-          </div>
-        </div>
-
-        {/* Main Content Editor */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Label>Lesson Content</Label>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                <Copy className="w-4 h-4 mr-2" />
-                Copy
-              </Button>
-              <Button variant="outline" size="sm">
-                <Upload className="w-4 h-4 mr-2" />
-                Import
-              </Button>
-            </div>
-          </div>
-
-          {editingLesson.type === 'html' ? (
-            <Textarea
-              className="font-mono text-sm min-h-[500px]"
-              placeholder="Enter your HTML content here..."
-              value={editingLesson.htmlContent || ''}
-              onChange={(e) => setEditingLesson(prev => prev ? { ...prev, htmlContent: e.target.value } : null)}
-            />
-          ) : (
-            <Textarea
-              className="min-h-[500px]"
-              placeholder="Enter your lesson content here... Use the AI Generate button above for instant content creation."
-              value={editingLesson.content}
-              onChange={(e) => setEditingLesson(prev => prev ? { ...prev, content: e.target.value } : null)}
-            />
-          )}
-        </div>
-
-        {/* Advanced AI Tools Panel */}
-        <div className="border rounded-lg p-4 bg-gradient-to-r from-blue-50 to-purple-50">
-          <h3 className="font-semibold mb-3 flex items-center gap-2">
-            <Bot className="w-5 h-5 text-blue-600" />
-            Advanced AI Tools
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            <Button variant="outline" size="sm">
-              <Sparkles className="w-4 h-4 mr-2" />
-              Enhance Content
-            </Button>
-            <Button variant="outline" size="sm">
-              <HelpCircle className="w-4 h-4 mr-2" />
-              Generate Quiz
-            </Button>
-            <Button variant="outline" size="sm">
-              <Target className="w-4 h-4 mr-2" />
-              Learning Path
-            </Button>
-            <Button variant="outline" size="sm">
-              <PenTool className="w-4 h-4 mr-2" />
-              Assignment Ideas
-            </Button>
-            <Button variant="outline" size="sm">
-              <FileText className="w-4 h-4 mr-2" />
-              Study Guide
-            </Button>
-            <Button variant="outline" size="sm">
-              <Award className="w-4 h-4 mr-2" />
-              Certificates
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Sales Page Preview Component
-const SalesPagePreview: React.FC<{
-  course: Course;
-  isOpen: boolean;
-  onClose: () => void;
-}> = ({ course, isOpen, onClose }) => {
-  if (!isOpen) return null;
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Sales Page Preview</DialogTitle>
-          <DialogDescription>
-            Preview how your course sales page will look to potential customers
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="space-y-8">
-          {/* Hero Section */}
-          <div className="text-center space-y-4 py-12 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg">
-            <h1 className="text-4xl font-bold">{course.salesPageContent.headline || course.title}</h1>
-            <p className="text-xl text-blue-100">{course.salesPageContent.subheadline || course.description}</p>
-            <div className="flex items-center justify-center gap-4 pt-4">
-              <div className="text-3xl font-bold">${course.price}</div>
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
-                <Play className="w-5 h-5 mr-2" />
-                Enroll Now
-              </Button>
-            </div>
-          </div>
-
-          {/* Course Stats */}
-          <div className="grid grid-cols-4 gap-6 text-center">
-            <div>
-              <div className="text-2xl font-bold text-blue-600">{course.modules.length}</div>
-              <div className="text-gray-600">Modules</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-green-600">
-                {course.modules.reduce((acc, mod) => acc + mod.lessons.length, 0)}
-              </div>
-              <div className="text-gray-600">Lessons</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-purple-600">{course.currentEnrollments}</div>
-              <div className="text-gray-600">Students</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-orange-600">4.8★</div>
-              <div className="text-gray-600">Rating</div>
-            </div>
-          </div>
-
-          {/* Features & Benefits */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="text-2xl font-bold mb-4">What You'll Learn</h3>
-              <ul className="space-y-2">
-                {course.learningObjectives.map((objective, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center mt-0.5">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                    <span>{objective}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="text-2xl font-bold mb-4">Course Features</h3>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2">
-                  <Video className="w-5 h-5 text-blue-500" />
-                  <span>HD Video Content</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Download className="w-5 h-5 text-green-500" />
-                  <span>Downloadable Resources</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Award className="w-5 h-5 text-purple-500" />
-                  <span>Certificate of Completion</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-orange-500" />
-                  <span>Lifetime Access</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Course Curriculum Preview */}
-          <div>
-            <h3 className="text-2xl font-bold mb-4">Course Curriculum</h3>
-            <div className="space-y-3">
-              {course.modules.slice(0, 3).map((module, index) => (
-                <div key={module.id} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold">Module {index + 1}: {module.title}</h4>
-                    <Badge variant="outline">{module.lessons.length} lessons</Badge>
-                  </div>
-                  <p className="text-gray-600 text-sm">{module.description}</p>
-                </div>
-              ))}
-              {course.modules.length > 3 && (
-                <div className="text-center py-4">
-                  <Badge variant="secondary">
-                    +{course.modules.length - 3} more modules
-                  </Badge>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Instructor Info */}
-          <div className="border rounded-lg p-6 bg-gray-50">
-            <h3 className="text-2xl font-bold mb-4">Your Instructor</h3>
-            <div className="flex items-start gap-4">
-              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                {course.authorName.charAt(0)}
-              </div>
-              <div>
-                <h4 className="font-semibold text-lg">{course.authorName}</h4>
-                <p className="text-gray-600">{course.authorBio}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Call to Action */}
-          <div className="text-center py-8 bg-gray-50 rounded-lg">
-            <h3 className="text-2xl font-bold mb-4">Ready to Start Learning?</h3>
-            <p className="text-gray-600 mb-6">Join {course.currentEnrollments} students already enrolled</p>
-            <Button size="lg" className="bg-green-600 hover:bg-green-700">
-              <Play className="w-5 h-5 mr-2" />
-              Enroll Now for ${course.price}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
 export default function CourseBuilder() {
   const [course, setCourse] = useState<Course>({
     id: '1',
@@ -1569,7 +514,18 @@ export default function CourseBuilder() {
             content: '',
             duration: 15,
             isLocked: false,
-            videoUrl: 'https://www.youtube.com/watch?v=example',
+            videoSettings: {
+              provider: 'youtube',
+              url: 'https://www.youtube.com/watch?v=example',
+              quality: '1080p',
+              autoplay: false,
+              controls: true,
+              playbackSpeed: true,
+              chapters: true,
+              captions: true,
+              downloadable: false,
+              analytics: true
+            },
             description: 'Overview of digital marketing landscape',
             order: 0,
             prerequisites: [],
@@ -1579,7 +535,31 @@ export default function CourseBuilder() {
             estimatedCompletionTime: 15,
             difficulty: 'beginner',
             tags: ['introduction', 'overview'],
-            points: 10
+            points: 10,
+            autoplay: false,
+            downloadable: false,
+            bookmarks: [],
+            notes: [],
+            engagement: {
+              views: 0,
+              completions: 0,
+              averageWatchTime: 0,
+              dropOffPoints: [],
+              interactions: 0,
+              rating: 0,
+              reviews: []
+            },
+            accessibility: {
+              closedCaptions: false,
+              audioDescription: false,
+              transcripts: false,
+              keyboardNavigation: false,
+              screenReaderCompatible: false,
+              highContrast: false,
+              fontSize: 'medium'
+            },
+            createdAt: new Date(),
+            updatedAt: new Date()
           }
         ]
       }
@@ -1590,12 +570,53 @@ export default function CourseBuilder() {
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [salesPagePreviewOpen, setSalesPagePreviewOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('content');
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [thumbnailUploading, setThumbnailUploading] = useState(false);
+  const [selectedModuleId, setSelectedModuleId] = useState<string>('');
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
+  // Drag and Drop handlers
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
     
-    // Handle drag and drop logic here
-    console.log('Drag ended:', result);
+    const { source, destination, type } = result;
+
+    if (type === 'module') {
+      const newModules = Array.from(course.modules);
+      const [reorderedModule] = newModules.splice(source.index, 1);
+      newModules.splice(destination.index, 0, reorderedModule);
+
+      // Update order
+      newModules.forEach((module, index) => {
+        module.order = index;
+      });
+
+      setCourse(prev => ({ ...prev, modules: newModules, lastModified: new Date() }));
+      toast.success("Modules reordered successfully!");
+    } else if (type === 'lesson') {
+      const moduleId = source.droppableId.replace('lessons-', '');
+      const destModuleId = destination.droppableId.replace('lessons-', '');
+
+      const newModules = course.modules.map(module => ({ ...module, lessons: [...module.lessons] }));
+      const sourceModule = newModules.find(m => m.id === moduleId);
+      const destModule = newModules.find(m => m.id === destModuleId);
+
+      if (sourceModule && destModule) {
+        const [movedLesson] = sourceModule.lessons.splice(source.index, 1);
+        destModule.lessons.splice(destination.index, 0, movedLesson);
+
+        // Update order
+        destModule.lessons.forEach((lesson, index) => {
+          lesson.order = index;
+        });
+
+        setCourse(prev => ({ ...prev, modules: newModules, lastModified: new Date() }));
+        toast.success("Lesson moved successfully!");
+      }
+    }
   };
 
   const openContentEditor = (lesson: Lesson) => {
@@ -1609,11 +630,12 @@ export default function CourseBuilder() {
       modules: prev.modules.map(module => ({
         ...module,
         lessons: module.lessons.map(lesson =>
-          lesson.id === updatedLesson.id ? updatedLesson : lesson
+          lesson.id === updatedLesson.id ? { ...updatedLesson, updatedAt: new Date() } : lesson
         )
       })),
       lastModified: new Date()
     }));
+    toast.success("Lesson saved successfully!");
   };
 
   const addModule = () => {
@@ -1663,15 +685,24 @@ export default function CourseBuilder() {
       notes: [],
       engagement: {
         views: 0,
+        completions: 0,
         averageWatchTime: 0,
-        completionRate: 0,
-        interactions: 0
+        dropOffPoints: [],
+        interactions: 0,
+        rating: 0,
+        reviews: []
       },
       accessibility: {
-        closedCaptioning: false,
-        screenReaderSupport: false,
-        keyboardNavigation: false
-      }
+        closedCaptions: false,
+        audioDescription: false,
+        transcripts: false,
+        keyboardNavigation: false,
+        screenReaderCompatible: false,
+        highContrast: false,
+        fontSize: 'medium'
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
     setCourse(prev => ({
@@ -1686,6 +717,177 @@ export default function CourseBuilder() {
     toast.success("New lesson added!");
   };
 
+  const deleteModule = (moduleId: string) => {
+    setCourse(prev => ({
+      ...prev,
+      modules: prev.modules.filter(module => module.id !== moduleId),
+      lastModified: new Date()
+    }));
+    toast.success("Module deleted!");
+  };
+
+  const deleteLesson = (moduleId: string, lessonId: string) => {
+    setCourse(prev => ({
+      ...prev,
+      modules: prev.modules.map(module =>
+        module.id === moduleId
+          ? { ...module, lessons: module.lessons.filter(lesson => lesson.id !== lessonId) }
+          : module
+      ),
+      lastModified: new Date()
+    }));
+    toast.success("Lesson deleted!");
+  };
+
+  const generateAIContent = async (type: 'outline' | 'content' | 'quiz' | 'objectives' = 'outline') => {
+    setAiGenerating(true);
+    
+    try {
+      // Simulate AI generation with more realistic content
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      if (type === 'outline') {
+        const newModules: Module[] = [
+          {
+            id: `ai-module-${Date.now()}`,
+            title: 'AI-Generated Foundation Module',
+            description: 'Comprehensive introduction covering all essential concepts and fundamentals',
+            lessons: [
+              {
+                id: `ai-lesson-${Date.now()}-1`,
+                title: 'Understanding the Basics',
+                type: 'video',
+                content: '# Understanding the Basics\n\n## Introduction\nThis lesson covers the fundamental concepts you need to master...\n\n## Key Points\n- Core principles and theories\n- Real-world applications\n- Best practices and standards\n\n## Practical Examples\nLet\'s explore some practical examples...',
+                duration: 20,
+                isLocked: false,
+                description: 'Master the fundamental concepts and principles',
+                order: 0,
+                prerequisites: [],
+                learningObjectives: ['Understand core concepts', 'Apply basic principles'],
+                resources: [],
+                isPreview: true,
+                estimatedCompletionTime: 20,
+                difficulty: 'beginner',
+                tags: ['fundamentals', 'basics'],
+                points: 10,
+                autoplay: false,
+                downloadable: true,
+                bookmarks: [],
+                notes: [],
+                engagement: {
+                  views: 0,
+                  completions: 0,
+                  averageWatchTime: 0,
+                  dropOffPoints: [],
+                  interactions: 0,
+                  rating: 0,
+                  reviews: []
+                },
+                accessibility: {
+                  closedCaptions: true,
+                  audioDescription: false,
+                  transcripts: true,
+                  keyboardNavigation: true,
+                  screenReaderCompatible: true,
+                  highContrast: false,
+                  fontSize: 'medium'
+                },
+                createdAt: new Date(),
+                updatedAt: new Date()
+              },
+              {
+                id: `ai-lesson-${Date.now()}-2`,
+                title: 'Practical Implementation',
+                type: 'text',
+                content: '# Practical Implementation\n\n## Step-by-Step Guide\n1. Planning and preparation\n2. Implementation strategies\n3. Testing and validation\n4. Optimization techniques\n\n## Best Practices\n- Follow industry standards\n- Document your process\n- Test thoroughly\n- Iterate and improve',
+                duration: 15,
+                isLocked: false,
+                description: 'Learn practical implementation strategies',
+                order: 1,
+                prerequisites: [],
+                learningObjectives: ['Implement strategies', 'Follow best practices'],
+                resources: [],
+                isPreview: false,
+                estimatedCompletionTime: 15,
+                difficulty: 'intermediate',
+                tags: ['implementation', 'practice'],
+                points: 15,
+                autoplay: false,
+                downloadable: true,
+                bookmarks: [],
+                notes: [],
+                engagement: {
+                  views: 0,
+                  completions: 0,
+                  averageWatchTime: 0,
+                  dropOffPoints: [],
+                  interactions: 0,
+                  rating: 0,
+                  reviews: []
+                },
+                accessibility: {
+                  closedCaptions: false,
+                  audioDescription: false,
+                  transcripts: true,
+                  keyboardNavigation: true,
+                  screenReaderCompatible: true,
+                  highContrast: false,
+                  fontSize: 'medium'
+                },
+                createdAt: new Date(),
+                updatedAt: new Date()
+              }
+            ],
+            isExpanded: true,
+            order: course.modules.length,
+            isLocked: false,
+            estimatedDuration: 35,
+            learningObjectives: ['Master fundamentals', 'Apply practical skills'],
+            prerequisites: [],
+            completionCriteria: 'Complete all lessons with 80% score'
+          }
+        ];
+
+        setCourse(prev => ({
+          ...prev,
+          modules: [...prev.modules, ...newModules],
+          lastModified: new Date()
+        }));
+        
+        toast.success("AI-generated course outline added! 🚀");
+      }
+      
+    } catch (error) {
+      toast.error("Failed to generate AI content. Please try again.");
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'thumbnail' | 'video' | 'audio' | 'document') => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingFile(true);
+    
+    try {
+      // Simulate file upload
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const fileUrl = URL.createObjectURL(file);
+      
+      if (type === 'thumbnail') {
+        setCourse(prev => ({ ...prev, thumbnail: fileUrl, lastModified: new Date() }));
+        toast.success("Thumbnail uploaded successfully!");
+      }
+      
+    } catch (error) {
+      toast.error("Failed to upload file. Please try again.");
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
   const getLessonIcon = (type: string) => {
     switch (type) {
       case 'video': return <Video className="w-4 h-4 text-blue-500" />;
@@ -1695,6 +897,7 @@ export default function CourseBuilder() {
       case 'html': return <Code className="w-4 h-4 text-red-500" />;
       case 'link': return <ExternalLink className="w-4 h-4 text-cyan-500" />;
       case 'audio': return <Mic className="w-4 h-4 text-pink-500" />;
+      case 'pdf': return <FilePdf className="w-4 h-4 text-red-600" />;
       case 'interactive': return <Monitor className="w-4 h-4 text-indigo-500" />;
       case 'live-session': return <Users className="w-4 h-4 text-sky-500" />;
       case 'workshop': return <PenTool className="w-4 h-4 text-lime-500" />;
@@ -1706,6 +909,23 @@ export default function CourseBuilder() {
     }
   };
 
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'video': return 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300';
+      case 'text': return 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300';
+      case 'quiz': return 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300';
+      case 'assignment': return 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300';
+      case 'html': return 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300';
+      case 'link': return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300';
+      default: return 'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300';
+    }
+  };
+
+  const totalLessons = course.modules.reduce((total, module) => total + module.lessons.length, 0);
+  const totalDuration = course.modules.reduce((total, module) => 
+    total + module.lessons.reduce((moduleTotal, lesson) => moduleTotal + lesson.duration, 0), 0
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -1713,7 +933,7 @@ export default function CourseBuilder() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center gap-4">
-              <Button variant="outline" onClick={() => window.close()}>
+              <Button variant="outline" onClick={() => window.history.back()}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to LMS
               </Button>
@@ -1722,16 +942,20 @@ export default function CourseBuilder() {
                   <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                     <BookOpen className="w-6 h-6 text-white" />
                   </div>
-                  Advanced Course Builder
+                  Professional Course Builder
                 </h1>
-                <p className="text-gray-600 mt-1">Create professional courses with AI-powered content generation</p>
+                <p className="text-gray-600 mt-1">Create, manage, and optimize your online courses with AI-powered tools</p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
+              <Button variant="outline" onClick={() => setShowAnalytics(true)}>
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Analytics
+              </Button>
               <Button variant="outline" onClick={() => setSalesPagePreviewOpen(true)}>
                 <Eye className="w-4 h-4 mr-2" />
-                Preview Sales Page
+                Preview
               </Button>
               <Button variant="outline">
                 <Save className="w-4 h-4 mr-2" />
@@ -1772,14 +996,14 @@ export default function CourseBuilder() {
                       <Label>Course Title</Label>
                       <Input
                         value={course.title}
-                        onChange={(e) => setCourse(prev => ({ ...prev, title: e.target.value }))}
+                        onChange={(e) => setCourse(prev => ({ ...prev, title: e.target.value, lastModified: new Date() }))}
                       />
                     </div>
                     <div>
                       <Label>Short Description</Label>
                       <Textarea
                         value={course.shortDescription}
-                        onChange={(e) => setCourse(prev => ({ ...prev, shortDescription: e.target.value }))}
+                        onChange={(e) => setCourse(prev => ({ ...prev, shortDescription: e.target.value, lastModified: new Date() }))}
                         rows={2}
                       />
                     </div>
@@ -1787,7 +1011,7 @@ export default function CourseBuilder() {
                       <Label>Full Description</Label>
                       <Textarea
                         value={course.description}
-                        onChange={(e) => setCourse(prev => ({ ...prev, description: e.target.value }))}
+                        onChange={(e) => setCourse(prev => ({ ...prev, description: e.target.value, lastModified: new Date() }))}
                         rows={4}
                       />
                     </div>
@@ -1797,12 +1021,12 @@ export default function CourseBuilder() {
                         <Input
                           type="number"
                           value={course.price}
-                          onChange={(e) => setCourse(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                          onChange={(e) => setCourse(prev => ({ ...prev, price: parseFloat(e.target.value) || 0, lastModified: new Date() }))}
                         />
                       </div>
                       <div>
                         <Label>Category</Label>
-                        <Select value={course.category} onValueChange={(value) => setCourse(prev => ({ ...prev, category: value }))}>
+                        <Select value={course.category} onValueChange={(value) => setCourse(prev => ({ ...prev, category: value, lastModified: new Date() }))}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
@@ -1814,6 +1038,45 @@ export default function CourseBuilder() {
                             <SelectItem value="Personal Development">Personal Development</SelectItem>
                           </SelectContent>
                         </Select>
+                      </div>
+                    </div>
+                    
+                    {/* Thumbnail Upload */}
+                    <div>
+                      <Label>Course Thumbnail</Label>
+                      <div className="mt-2">
+                        {course.thumbnail ? (
+                          <div className="relative">
+                            <img 
+                              src={course.thumbnail} 
+                              alt="Course thumbnail" 
+                              className="w-full h-32 object-cover rounded-lg"
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="absolute top-2 right-2"
+                              onClick={() => thumbnailInputRef.current?.click()}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div 
+                            className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-gray-400"
+                            onClick={() => thumbnailInputRef.current?.click()}
+                          >
+                            <ImageIcon className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                            <p className="text-sm text-gray-600">Click to upload thumbnail</p>
+                          </div>
+                        )}
+                        <input
+                          ref={thumbnailInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleFileUpload(e, 'thumbnail')}
+                        />
                       </div>
                     </div>
                   </CardContent>
@@ -1832,9 +1095,11 @@ export default function CourseBuilder() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Lessons:</span>
-                        <span className="font-semibold">
-                          {course.modules.reduce((acc, mod) => acc + mod.lessons.length, 0)}
-                        </span>
+                        <span className="font-semibold">{totalLessons}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Duration:</span>
+                        <span className="font-semibold">{Math.floor(totalDuration / 60)}h {totalDuration % 60}m</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Enrolled:</span>
@@ -1854,6 +1119,55 @@ export default function CourseBuilder() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* AI Tools */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Bot className="w-5 h-5 text-purple-600" />
+                      AI Course Tools
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Button 
+                      onClick={() => generateAIContent('outline')} 
+                      disabled={aiGenerating}
+                      className="w-full bg-purple-600 hover:bg-purple-700"
+                    >
+                      {aiGenerating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="w-4 h-4 mr-2" />
+                          Generate Course Outline
+                        </>
+                      )}
+                    </Button>
+                    
+                    <Button 
+                      onClick={() => generateAIContent('content')} 
+                      disabled={aiGenerating}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Generate Content
+                    </Button>
+                    
+                    <Button 
+                      onClick={() => generateAIContent('quiz')} 
+                      disabled={aiGenerating}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      <HelpCircle className="w-4 h-4 mr-2" />
+                      Generate Quizzes
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Course Content Area */}
@@ -1870,137 +1184,182 @@ export default function CourseBuilder() {
                           <Plus className="w-4 h-4 mr-2" />
                           Add Module
                         </Button>
-                        <Button variant="outline">
-                          <Bot className="w-4 h-4 mr-2" />
-                          AI Generate Structure
-                        </Button>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {course.modules.map((module, index) => (
-                        <div key={module.id} className="border rounded-lg bg-white">
-                          {/* Module Header */}
-                          <div className="p-4 border-b bg-gray-50 rounded-t-lg">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setCourse(prev => ({
-                                      ...prev,
-                                      modules: prev.modules.map(m =>
-                                        m.id === module.id ? { ...m, isExpanded: !m.isExpanded } : m
-                                      )
-                                    }));
-                                  }}
-                                >
-                                  {module.isExpanded ? 
-                                    <ChevronDown className="w-4 h-4" /> : 
-                                    <ChevronRight className="w-4 h-4" />
-                                  }
-                                </Button>
-                                <GripVertical className="w-4 h-4 text-gray-400 cursor-grab" />
-                                <div>
-                                  <h3 className="font-semibold">Module {index + 1}: {module.title}</h3>
-                                  <p className="text-sm text-gray-600">{module.description}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline">
-                                  {module.lessons.length} lessons
-                                </Badge>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => addLesson(module.id)}
-                                >
-                                  <Plus className="w-4 h-4 mr-2" />
-                                  Add Lesson
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Module Lessons */}
-                          {module.isExpanded && (
-                            <div className="p-4 space-y-2">
-                              {module.lessons.map((lesson, lessonIndex) => (
-                                <div
-                                  key={lesson.id}
-                                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                                  onClick={() => openContentEditor(lesson)}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <GripVertical className="w-4 h-4 text-gray-400 cursor-grab" />
-                                    <div className="p-2 rounded-lg bg-gray-100">
-                                      {getLessonIcon(lesson.type)}
-                                    </div>
-                                    <div>
-                                      <h4 className="font-medium">{lesson.title}</h4>
-                                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                                        <Clock className="w-3 h-3" />
-                                        {lesson.duration} min
-                                        <Badge variant="outline" className="text-xs">
-                                          {lesson.type}
-                                        </Badge>
-                                        {lesson.isLocked && <Lock className="w-3 h-3 text-orange-500" />}
-                                        {lesson.isPreview && <Eye className="w-3 h-3 text-blue-500" />}
+                    <DragDropContext onDragEnd={handleDragEnd}>
+                      <Droppable droppableId="modules" type="module">
+                        {(provided) => (
+                          <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
+                            {course.modules.map((module, moduleIndex) => (
+                              <Draggable key={module.id} draggableId={module.id} index={moduleIndex}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    className={`border rounded-lg bg-white ${snapshot.isDragging ? 'shadow-lg' : ''}`}
+                                  >
+                                    {/* Module Header */}
+                                    <div className="p-4 border-b bg-gray-50 rounded-t-lg">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                          <div
+                                            {...provided.dragHandleProps}
+                                            className="cursor-grab active:cursor-grabbing p-1 text-gray-400 hover:text-gray-600"
+                                          >
+                                            <GripVertical className="w-5 h-5" />
+                                          </div>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                              setCourse(prev => ({
+                                                ...prev,
+                                                modules: prev.modules.map(m =>
+                                                  m.id === module.id ? { ...m, isExpanded: !m.isExpanded } : m
+                                                )
+                                              }));
+                                            }}
+                                          >
+                                            {module.isExpanded ? 
+                                              <ChevronDown className="w-4 h-4" /> : 
+                                              <ChevronRight className="w-4 h-4" />
+                                            }
+                                          </Button>
+                                          <div>
+                                            <h3 className="font-semibold">Module {moduleIndex + 1}: {module.title}</h3>
+                                            <p className="text-sm text-gray-600">{module.description}</p>
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <Badge variant="outline">
+                                            {module.lessons.length} lessons
+                                          </Badge>
+                                          <Badge variant="outline">
+                                            {module.estimatedDuration}m
+                                          </Badge>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => addLesson(module.id)}
+                                          >
+                                            <Plus className="w-4 h-4 mr-2" />
+                                            Add Lesson
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => deleteModule(module.id)}
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </Button>
+                                        </div>
                                       </div>
                                     </div>
+
+                                    {/* Module Lessons */}
+                                    {module.isExpanded && (
+                                      <div className="p-4">
+                                        <Droppable droppableId={`lessons-${module.id}`} type="lesson">
+                                          {(provided) => (
+                                            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                                              {module.lessons.map((lesson, lessonIndex) => (
+                                                <Draggable key={lesson.id} draggableId={lesson.id} index={lessonIndex}>
+                                                  {(provided, snapshot) => (
+                                                    <div
+                                                      ref={provided.innerRef}
+                                                      {...provided.draggableProps}
+                                                      className={`p-3 border rounded-lg hover:bg-gray-50 cursor-pointer ${snapshot.isDragging ? 'shadow-lg' : ''}`}
+                                                      onClick={() => openContentEditor(lesson)}
+                                                    >
+                                                      <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                          <div
+                                                            {...provided.dragHandleProps}
+                                                            className="cursor-grab active:cursor-grabbing p-1 text-gray-400 hover:text-gray-600"
+                                                          >
+                                                            <GripVertical className="w-4 h-4" />
+                                                          </div>
+                                                          <div className="p-2 rounded-lg bg-gray-100">
+                                                            {getLessonIcon(lesson.type)}
+                                                          </div>
+                                                          <div>
+                                                            <h4 className="font-medium">{lesson.title}</h4>
+                                                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                              <Clock className="w-3 h-3" />
+                                                              {lesson.duration} min
+                                                              <Badge variant="outline" className={`text-xs ${getTypeColor(lesson.type)}`}>
+                                                                {lesson.type}
+                                                              </Badge>
+                                                              {lesson.isLocked && <Lock className="w-3 h-3 text-orange-500" />}
+                                                              {lesson.isPreview && <Eye className="w-3 h-3 text-blue-500" />}
+                                                            </div>
+                                                          </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                          <Button 
+                                                            variant="ghost" 
+                                                            size="sm"
+                                                            onClick={(e) => {
+                                                              e.stopPropagation();
+                                                              openContentEditor(lesson);
+                                                            }}
+                                                          >
+                                                            <Edit className="w-4 h-4" />
+                                                          </Button>
+                                                          <Button 
+                                                            variant="ghost" 
+                                                            size="sm"
+                                                            onClick={(e) => {
+                                                              e.stopPropagation();
+                                                              deleteLesson(module.id, lesson.id);
+                                                            }}
+                                                          >
+                                                            <Trash2 className="w-4 h-4" />
+                                                          </Button>
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                  )}
+                                                </Draggable>
+                                              ))}
+                                              {provided.placeholder}
+                                              
+                                              {module.lessons.length === 0 && (
+                                                <div className="text-center py-8 text-gray-500">
+                                                  <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                                  <p>No lessons yet. Add your first lesson above.</p>
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                        </Droppable>
+                                      </div>
+                                    )}
                                   </div>
-                                  <div className="flex items-center gap-2">
-                                    <Button variant="ghost" size="sm">
-                                      <Edit className="w-4 h-4" />
-                                    </Button>
-                                    <Button variant="ghost" size="sm">
-                                      <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
                   </CardContent>
                 </Card>
               </div>
             </div>
           </TabsContent>
 
-          {/* Other tabs would go here... */}
+          {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Basic Settings */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Course Information</CardTitle>
-                  <CardDescription>Basic course details and metadata</CardDescription>
+                  <CardTitle>Course Settings</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
-                    <Label>Course Category</Label>
-                    <Select value={course.category} onValueChange={(value) => setCourse(prev => ({ ...prev, category: value }))}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Business">💼 Business & Entrepreneurship</SelectItem>
-                        <SelectItem value="Technology">💻 Technology & Programming</SelectItem>
-                        <SelectItem value="Marketing">📈 Marketing & Sales</SelectItem>
-                        <SelectItem value="Design">🎨 Design & Creative</SelectItem>
-                        <SelectItem value="Finance">💰 Finance & Investment</SelectItem>
-                        <SelectItem value="Health">🏥 Health & Wellness</SelectItem>
-                        <SelectItem value="Education">📚 Education & Training</SelectItem>
-                        <SelectItem value="Personal">🌱 Personal Development</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
                   <div>
                     <Label>Difficulty Level</Label>
                     <Select value={course.difficulty} onValueChange={(value: any) => setCourse(prev => ({ ...prev, difficulty: value }))}>
@@ -2008,43 +1367,26 @@ export default function CourseBuilder() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="beginner">🌱 Beginner - No prior experience needed</SelectItem>
-                        <SelectItem value="intermediate">📈 Intermediate - Some experience helpful</SelectItem>
-                        <SelectItem value="advanced">🚀 Advanced - Significant experience required</SelectItem>
-                        <SelectItem value="expert">🏆 Expert - Master level content</SelectItem>
+                        <SelectItem value="beginner">Beginner</SelectItem>
+                        <SelectItem value="intermediate">Intermediate</SelectItem>
+                        <SelectItem value="advanced">Advanced</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
-                    <Label>Course Language</Label>
+                    <Label>Language</Label>
                     <Select value={course.language} onValueChange={(value) => setCourse(prev => ({ ...prev, language: value }))}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="English">🇺🇸 English</SelectItem>
-                        <SelectItem value="Spanish">🇪🇸 Spanish</SelectItem>
-                        <SelectItem value="French">🇫🇷 French</SelectItem>
-                        <SelectItem value="German">🇩🇪 German</SelectItem>
-                        <SelectItem value="Chinese">🇨🇳 Chinese</SelectItem>
-                        <SelectItem value="Japanese">🇯🇵 Japanese</SelectItem>
-                        <SelectItem value="Portuguese">🇵🇹 Portuguese</SelectItem>
-                        <SelectItem value="Russian">🇷🇺 Russian</SelectItem>
+                        <SelectItem value="English">English</SelectItem>
+                        <SelectItem value="Spanish">Spanish</SelectItem>
+                        <SelectItem value="French">French</SelectItem>
+                        <SelectItem value="German">German</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-
-                  <div>
-                    <Label>Course Tags</Label>
-                    <Input
-                      placeholder="Enter tags separated by commas..."
-                      value={course.tags.join(', ')}
-                      onChange={(e) => setCourse(prev => ({ 
-                        ...prev, 
-                        tags: e.target.value.split(',').map(tag => tag.trim()).filter(Boolean) 
-                      }))}
-                    />
                   </div>
 
                   <div className="space-y-3">
@@ -2093,38 +1435,14 @@ export default function CourseBuilder() {
                           onCheckedChange={(checked) => setCourse(prev => ({ ...prev, liveSupport: checked }))}
                         />
                       </div>
-
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <div className="font-medium">Downloads</div>
-                          <div className="text-xs text-gray-600">Downloadable resources</div>
-                        </div>
-                        <Switch
-                          checked={course.downloadableResources}
-                          onCheckedChange={(checked) => setCourse(prev => ({ ...prev, downloadableResources: checked }))}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <div className="font-medium">Mobile Access</div>
-                          <div className="text-xs text-gray-600">Mobile app support</div>
-                        </div>
-                        <Switch
-                          checked={course.mobileAccess}
-                          onCheckedChange={(checked) => setCourse(prev => ({ ...prev, mobileAccess: checked }))}
-                        />
-                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Enrollment Settings */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Enrollment & Access</CardTitle>
-                  <CardDescription>Manage student enrollment and access control</CardDescription>
+                  <CardTitle>Enrollment Settings</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -2141,7 +1459,6 @@ export default function CourseBuilder() {
                       <Input
                         type="number"
                         value={course.currentEnrollments}
-                        onChange={(e) => setCourse(prev => ({ ...prev, currentEnrollments: parseInt(e.target.value) || 0 }))}
                         disabled
                       />
                     </div>
@@ -2157,8 +1474,8 @@ export default function CourseBuilder() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="automatic">🔄 Automatic - Instant enrollment</SelectItem>
-                        <SelectItem value="manual">👤 Manual - Instructor approval required</SelectItem>
+                        <SelectItem value="automatic">Automatic</SelectItem>
+                        <SelectItem value="manual">Manual Approval</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -2184,119 +1501,1013 @@ export default function CourseBuilder() {
                       onCheckedChange={(checked) => setCourse(prev => ({ ...prev, isPublished: checked }))}
                     />
                   </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
-                  {/* Access Control */}
-                  <div>
-                    <Label>Access Requirements</Label>
-                    <div className="space-y-2 mt-2">
-                      {course.requirements.map((req, index) => (
-                        <div key={index} className="flex gap-2">
-                          <Input
-                            value={req}
-                            onChange={(e) => {
-                              const newReqs = [...course.requirements];
-                              newReqs[index] = e.target.value;
-                              setCourse(prev => ({ ...prev, requirements: newReqs }));
-                            }}
-                            placeholder="e.g., Basic computer skills"
-                          />
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const newReqs = course.requirements.filter((_, i) => i !== index);
-                              setCourse(prev => ({ ...prev, requirements: newReqs }));
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCourse(prev => ({ 
-                          ...prev, 
-                          requirements: [...prev.requirements, ''] 
+          {/* Sales Page Tab */}
+          <TabsContent value="sales" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Sales Page Builder</CardTitle>
+                <CardDescription>Create compelling sales content for your course</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Headline</Label>
+                      <Input
+                        value={course.salesPageContent.headline}
+                        onChange={(e) => setCourse(prev => ({
+                          ...prev,
+                          salesPageContent: { ...prev.salesPageContent, headline: e.target.value }
                         }))}
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Requirement
+                        placeholder="Master Digital Marketing in 30 Days"
+                      />
+                    </div>
+                    <div>
+                      <Label>Subheadline</Label>
+                      <Input
+                        value={course.salesPageContent.subheadline}
+                        onChange={(e) => setCourse(prev => ({
+                          ...prev,
+                          salesPageContent: { ...prev.salesPageContent, subheadline: e.target.value }
+                        }))}
+                        placeholder="From zero to marketing hero with proven strategies"
+                      />
+                    </div>
+                    <div>
+                      <Label>Guarantee</Label>
+                      <Textarea
+                        value={course.salesPageContent.guarantee}
+                        onChange={(e) => setCourse(prev => ({
+                          ...prev,
+                          salesPageContent: { ...prev.salesPageContent, guarantee: e.target.value }
+                        }))}
+                        placeholder="30-day money-back guarantee"
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-lg">
+                    <h2 className="text-2xl font-bold mb-2">{course.salesPageContent.headline || course.title}</h2>
+                    <p className="text-blue-100 mb-4">{course.salesPageContent.subheadline || course.description}</p>
+                    <div className="flex items-center gap-4">
+                      <div className="text-3xl font-bold">${course.price}</div>
+                      <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
+                        Enroll Now
                       </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Course Features & Benefits</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Label>What You'll Learn</Label>
+                      <div className="space-y-2 mt-2">
+                        {course.learningObjectives.map((objective, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              value={objective}
+                              onChange={(e) => {
+                                const newObjectives = [...course.learningObjectives];
+                                newObjectives[index] = e.target.value;
+                                setCourse(prev => ({ ...prev, learningObjectives: newObjectives }));
+                              }}
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const newObjectives = course.learningObjectives.filter((_, i) => i !== index);
+                                setCourse(prev => ({ ...prev, learningObjectives: newObjectives }));
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCourse(prev => ({ 
+                            ...prev, 
+                            learningObjectives: [...prev.learningObjectives, ''] 
+                          }))}
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Objective
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label>Course Outcomes</Label>
+                      <div className="space-y-2 mt-2">
+                        {course.courseOutcome.map((outcome, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              value={outcome}
+                              onChange={(e) => {
+                                const newOutcomes = [...course.courseOutcome];
+                                newOutcomes[index] = e.target.value;
+                                setCourse(prev => ({ ...prev, courseOutcome: newOutcomes }));
+                              }}
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const newOutcomes = course.courseOutcome.filter((_, i) => i !== index);
+                                setCourse(prev => ({ ...prev, courseOutcome: newOutcomes }));
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCourse(prev => ({ 
+                            ...prev, 
+                            courseOutcome: [...prev.courseOutcome, ''] 
+                          }))}
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Outcome
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Pricing Tab */}
+          <TabsContent value="pricing" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Pricing & Payment Options</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Regular Price ($)</Label>
+                      <Input
+                        type="number"
+                        value={course.pricing.regularPrice}
+                        onChange={(e) => setCourse(prev => ({
+                          ...prev,
+                          pricing: { ...prev.pricing, regularPrice: parseFloat(e.target.value) || 0 }
+                        }))}
+                      />
+                    </div>
+                    <div>
+                      <Label>Sale Price ($)</Label>
+                      <Input
+                        type="number"
+                        value={course.pricing.salePrice || ''}
+                        onChange={(e) => setCourse(prev => ({
+                          ...prev,
+                          pricing: { ...prev.pricing, salePrice: parseFloat(e.target.value) || undefined }
+                        }))}
+                        placeholder="Optional sale price"
+                      />
+                    </div>
+                    <div>
+                      <Label>Currency</Label>
+                      <Select value={course.currency} onValueChange={(value) => setCourse(prev => ({ ...prev, currency: value }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="USD">USD ($)</SelectItem>
+                          <SelectItem value="EUR">EUR (€)</SelectItem>
+                          <SelectItem value="GBP">GBP (£)</SelectItem>
+                          <SelectItem value="CAD">CAD ($)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="p-4 border rounded-lg">
+                      <h4 className="font-semibold mb-2">Payment Preview</h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span>Regular Price:</span>
+                          <span className={course.pricing.salePrice ? 'line-through text-gray-500' : 'font-semibold'}>
+                            ${course.pricing.regularPrice}
+                          </span>
+                        </div>
+                        {course.pricing.salePrice && (
+                          <div className="flex justify-between">
+                            <span>Sale Price:</span>
+                            <span className="font-semibold text-green-600">${course.pricing.salePrice}</span>
+                          </div>
+                        )}
+                        <Separator />
+                        <div className="flex justify-between font-bold">
+                          <span>Total:</span>
+                          <span>${course.pricing.salePrice || course.pricing.regularPrice}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-green-50 rounded-lg">
+                      <h4 className="font-semibold text-green-800 mb-2">Revenue Projection</h4>
+                      <div className="text-sm text-green-700">
+                        <p>With {course.currentEnrollments} current enrollments:</p>
+                        <p className="font-semibold">${((course.pricing.salePrice || course.pricing.regularPrice) * course.currentEnrollments).toLocaleString()} total revenue</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Total Views</p>
+                      <p className="text-2xl font-bold">{course.analytics.totalViews.toLocaleString()}</p>
+                      <p className="text-xs text-green-600">+23% this month</p>
+                    </div>
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Eye className="w-6 h-6 text-blue-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Conversion Rate</p>
+                      <p className="text-2xl font-bold">{course.analytics.conversionRate}%</p>
+                      <p className="text-xs text-green-600">+2.1% this month</p>
+                    </div>
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                      <TrendingUp className="w-6 h-6 text-green-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Completion Rate</p>
+                      <p className="text-2xl font-bold">{course.analytics.completionRate}%</p>
+                      <p className="text-xs text-green-600">+5.2% this month</p>
+                    </div>
+                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <Target className="w-6 h-6 text-purple-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                      <p className="text-2xl font-bold">${course.analytics.totalRevenue.toLocaleString()}</p>
+                      <p className="text-xs text-green-600">+18% this month</p>
+                    </div>
+                    <div className="w-12 h-12 bg-coral-100 rounded-lg flex items-center justify-center">
+                      <DollarSign className="w-6 h-6 text-coral-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance Insights</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
+                    <p className="text-sm text-green-800">
+                      📈 Your course completion rate is 15% above industry average
+                    </p>
+                  </div>
+                  <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                    <p className="text-sm text-blue-800">
+                      💡 Students spend an average of 45 minutes per lesson
+                    </p>
+                  </div>
+                  <div className="p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-500">
+                    <p className="text-sm text-yellow-800">
+                      ⚡ Consider adding more interactive elements to boost engagement
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Advanced Tab */}
+          <TabsContent value="advanced" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Advanced Course Features</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <div className="font-medium">Advanced Video Analytics</div>
+                        <div className="text-xs text-gray-600">Track detailed viewing patterns</div>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <div className="font-medium">AI-Powered Recommendations</div>
+                        <div className="text-xs text-gray-600">Suggest next lessons to students</div>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <div className="font-medium">Advanced Quizzing Engine</div>
+                        <div className="text-xs text-gray-600">Adaptive questioning system</div>
+                      </div>
+                      <Switch />
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <div className="font-medium">White-label Branding</div>
+                        <div className="text-xs text-gray-600">Remove platform branding</div>
+                      </div>
+                      <Switch />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Video Player Options</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Video Player</Label>
+                    <Select defaultValue="videojs">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="youtube">
+                          <div className="flex items-center gap-2">
+                            <Video className="w-4 h-4" />
+                            YouTube Player
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="vimeo">
+                          <div className="flex items-center gap-2">
+                            <Video className="w-4 h-4" />
+                            Vimeo Player
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="wistia">
+                          <div className="flex items-center gap-2">
+                            <Video className="w-4 h-4" />
+                            Wistia Player
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="jwplayer">
+                          <div className="flex items-center gap-2">
+                            <Video className="w-4 h-4" />
+                            JW Player
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="videojs">
+                          <div className="flex items-center gap-2">
+                            <Video className="w-4 h-4" />
+                            Video.js Player
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="cloudinary">
+                          <div className="flex items-center gap-2">
+                            <CloudUpload className="w-4 h-4" />
+                            Cloudinary Player
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="bunny">
+                          <div className="flex items-center gap-2">
+                            <Video className="w-4 h-4" />
+                            Bunny Stream
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="mux">
+                          <div className="flex items-center gap-2">
+                            <Video className="w-4 h-4" />
+                            Mux Video
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label>Player Features</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <div className="font-medium text-sm">Auto-play</div>
+                        </div>
+                        <Switch />
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <div className="font-medium text-sm">Playback Speed</div>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <div className="font-medium text-sm">Chapters</div>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <div className="font-medium text-sm">Captions</div>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <div className="font-medium text-sm">Downloads</div>
+                        </div>
+                        <Switch />
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <div className="font-medium text-sm">Analytics</div>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Content Upload Tools</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2">
+                      <FileVideo className="w-6 h-6 text-blue-500" />
+                      <div className="text-center">
+                        <div className="font-medium text-sm">Video Upload</div>
+                        <div className="text-xs text-gray-600">MP4, MOV, AVI</div>
+                      </div>
+                    </Button>
+
+                    <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2">
+                      <FileAudio className="w-6 h-6 text-green-500" />
+                      <div className="text-center">
+                        <div className="font-medium text-sm">Audio Upload</div>
+                        <div className="text-xs text-gray-600">MP3, WAV, M4A</div>
+                      </div>
+                    </Button>
+
+                    <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2">
+                      <FilePdf className="w-6 h-6 text-red-500" />
+                      <div className="text-center">
+                        <div className="font-medium text-sm">PDF Upload</div>
+                        <div className="text-xs text-gray-600">Documents, slides</div>
+                      </div>
+                    </Button>
+
+                    <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2">
+                      <ImageIcon className="w-6 h-6 text-purple-500" />
+                      <div className="text-center">
+                        <div className="font-medium text-sm">Image Upload</div>
+                        <div className="text-xs text-gray-600">JPG, PNG, GIF</div>
+                      </div>
+                    </Button>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <Label>Bulk Upload</Label>
+                    <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                      <CloudUpload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600">Drag and drop files or click to browse</p>
+                      <p className="text-xs text-gray-500 mt-1">Supports batch upload of multiple files</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>SEO & Marketing</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Meta Title</Label>
+                    <Input
+                      value={course.seo.metaTitle}
+                      onChange={(e) => setCourse(prev => ({
+                        ...prev,
+                        seo: { ...prev.seo, metaTitle: e.target.value }
+                      }))}
+                      placeholder="SEO-optimized title"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Meta Description</Label>
+                    <Textarea
+                      value={course.seo.metaDescription}
+                      onChange={(e) => setCourse(prev => ({
+                        ...prev,
+                        seo: { ...prev.seo, metaDescription: e.target.value }
+                      }))}
+                      placeholder="SEO-optimized description"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Keywords</Label>
+                    <Input
+                      value={course.seo.keywords.join(', ')}
+                      onChange={(e) => setCourse(prev => ({
+                        ...prev,
+                        seo: { ...prev.seo, keywords: e.target.value.split(',').map(k => k.trim()) }
+                      }))}
+                      placeholder="keyword1, keyword2, keyword3"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Open Graph Image</Label>
+                    <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                      <ImageIcon className="w-6 h-6 mx-auto text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600">Upload OG image</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
-
-          <TabsContent value="sales">
-            <Card>
-              <CardHeader>
-                <CardTitle>Sales Page Builder</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-gray-500">
-                  Sales page builder coming soon...
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="pricing">
-            <Card>
-              <CardHeader>
-                <CardTitle>Pricing & Coupons</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-gray-500">
-                  Pricing management coming soon...
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            <Card>
-              <CardHeader>
-                <CardTitle>Course Analytics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-gray-500">
-                  Analytics dashboard coming soon...
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="advanced">
-            <Card>
-              <CardHeader>
-                <CardTitle>Advanced Features</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-gray-500">
-                  Advanced features coming soon...
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </div>
 
-      {/* AI Content Editor Slide-out */}
-      <AIContentEditor
-        isOpen={contentEditorOpen}
-        onClose={() => setContentEditorOpen(false)}
-        lesson={editingLesson}
-        onSave={saveLesson}
-      />
+      {/* Content Editor Modal */}
+      {contentEditorOpen && editingLesson && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Edit Lesson: {editingLesson.title}</h3>
+                <Button variant="ghost" onClick={() => setContentEditorOpen(false)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Lesson Title</Label>
+                    <Input
+                      value={editingLesson.title}
+                      onChange={(e) => setEditingLesson(prev => prev ? { ...prev, title: e.target.value } : null)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Lesson Type</Label>
+                    <Select
+                      value={editingLesson.type}
+                      onValueChange={(value: any) => setEditingLesson(prev => prev ? { ...prev, type: value } : null)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="video">Video Lesson</SelectItem>
+                        <SelectItem value="text">Text Content</SelectItem>
+                        <SelectItem value="html">HTML Content</SelectItem>
+                        <SelectItem value="quiz">Quiz</SelectItem>
+                        <SelectItem value="assignment">Assignment</SelectItem>
+                        <SelectItem value="link">External Link</SelectItem>
+                        <SelectItem value="audio">Audio Lesson</SelectItem>
+                        <SelectItem value="pdf">PDF Document</SelectItem>
+                        <SelectItem value="interactive">Interactive Content</SelectItem>
+                        <SelectItem value="live-session">Live Session</SelectItem>
+                        <SelectItem value="workshop">Workshop</SelectItem>
+                        <SelectItem value="case-study">Case Study</SelectItem>
+                        <SelectItem value="simulation">Simulation</SelectItem>
+                        <SelectItem value="assessment">Assessment</SelectItem>
+                        <SelectItem value="certification">Certification</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label>Duration (minutes)</Label>
+                    <Input
+                      type="number"
+                      value={editingLesson.duration}
+                      onChange={(e) => setEditingLesson(prev => prev ? { ...prev, duration: parseInt(e.target.value) || 0 } : null)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Difficulty</Label>
+                    <Select
+                      value={editingLesson.difficulty}
+                      onValueChange={(value: any) => setEditingLesson(prev => prev ? { ...prev, difficulty: value } : null)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="beginner">Beginner</SelectItem>
+                        <SelectItem value="intermediate">Intermediate</SelectItem>
+                        <SelectItem value="advanced">Advanced</SelectItem>
+                        <SelectItem value="expert">Expert</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Points</Label>
+                    <Input
+                      type="number"
+                      value={editingLesson.points}
+                      onChange={(e) => setEditingLesson(prev => prev ? { ...prev, points: parseInt(e.target.value) || 0 } : null)}
+                    />
+                  </div>
+                </div>
+
+                {/* Video Settings */}
+                {editingLesson.type === 'video' && (
+                  <div className="space-y-4">
+                    <Label>Video Settings</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Video Provider</Label>
+                        <Select
+                          value={editingLesson.videoSettings?.provider || 'youtube'}
+                          onValueChange={(value: any) => setEditingLesson(prev => prev ? {
+                            ...prev,
+                            videoSettings: { ...prev.videoSettings, provider: value } as VideoSettings
+                          } : null)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="youtube">YouTube</SelectItem>
+                            <SelectItem value="vimeo">Vimeo</SelectItem>
+                            <SelectItem value="wistia">Wistia</SelectItem>
+                            <SelectItem value="jwplayer">JW Player</SelectItem>
+                            <SelectItem value="videojs">Video.js</SelectItem>
+                            <SelectItem value="cloudinary">Cloudinary</SelectItem>
+                            <SelectItem value="bunny">Bunny Stream</SelectItem>
+                            <SelectItem value="mux">Mux Video</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Video Quality</Label>
+                        <Select
+                          value={editingLesson.videoSettings?.quality || '1080p'}
+                          onValueChange={(value: any) => setEditingLesson(prev => prev ? {
+                            ...prev,
+                            videoSettings: { ...prev.videoSettings, quality: value } as VideoSettings
+                          } : null)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="480p">480p</SelectItem>
+                            <SelectItem value="720p">720p</SelectItem>
+                            <SelectItem value="1080p">1080p</SelectItem>
+                            <SelectItem value="4k">4K</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Video URL</Label>
+                      <Input
+                        value={editingLesson.videoSettings?.url || ''}
+                        onChange={(e) => setEditingLesson(prev => prev ? {
+                          ...prev,
+                          videoSettings: { ...prev.videoSettings, url: e.target.value } as VideoSettings
+                        } : null)}
+                        placeholder="Enter video URL"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* External Link */}
+                {editingLesson.type === 'link' && (
+                  <div>
+                    <Label>External URL</Label>
+                    <Input
+                      value={editingLesson.externalUrl || ''}
+                      onChange={(e) => setEditingLesson(prev => prev ? { ...prev, externalUrl: e.target.value } : null)}
+                      placeholder="https://example.com"
+                    />
+                  </div>
+                )}
+
+                {/* Audio URL */}
+                {editingLesson.type === 'audio' && (
+                  <div>
+                    <Label>Audio URL</Label>
+                    <Input
+                      value={editingLesson.audioUrl || ''}
+                      onChange={(e) => setEditingLesson(prev => prev ? { ...prev, audioUrl: e.target.value } : null)}
+                      placeholder="Enter audio file URL"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <Label>Description</Label>
+                  <Textarea
+                    value={editingLesson.description}
+                    onChange={(e) => setEditingLesson(prev => prev ? { ...prev, description: e.target.value } : null)}
+                    rows={3}
+                  />
+                </div>
+
+                {/* Content Editor */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Lesson Content</Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => generateAIContent('content')}
+                      disabled={aiGenerating}
+                    >
+                      {aiGenerating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Bot className="w-4 h-4 mr-2" />
+                          AI Generate
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <Textarea
+                    value={editingLesson.content}
+                    onChange={(e) => setEditingLesson(prev => prev ? { ...prev, content: e.target.value } : null)}
+                    rows={12}
+                    placeholder="Enter your lesson content here..."
+                  />
+                </div>
+
+                {/* Lesson Settings */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">Locked</div>
+                      <div className="text-xs text-gray-600">Require prerequisites</div>
+                    </div>
+                    <Switch
+                      checked={editingLesson.isLocked}
+                      onCheckedChange={(checked) => setEditingLesson(prev => prev ? { ...prev, isLocked: checked } : null)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">Preview</div>
+                      <div className="text-xs text-gray-600">Free preview lesson</div>
+                    </div>
+                    <Switch
+                      checked={editingLesson.isPreview}
+                      onCheckedChange={(checked) => setEditingLesson(prev => prev ? { ...prev, isPreview: checked } : null)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">Downloadable</div>
+                      <div className="text-xs text-gray-600">Allow downloads</div>
+                    </div>
+                    <Switch
+                      checked={editingLesson.downloadable}
+                      onCheckedChange={(checked) => setEditingLesson(prev => prev ? { ...prev, downloadable: checked } : null)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t bg-gray-50 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setContentEditorOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  if (editingLesson) {
+                    saveLesson(editingLesson);
+                    setContentEditorOpen(false);
+                  }
+                }}
+              >
+                Save Lesson
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sales Page Preview Modal */}
-      <SalesPagePreview
-        course={course}
-        isOpen={salesPagePreviewOpen}
-        onClose={() => setSalesPagePreviewOpen(false)}
+      {salesPagePreviewOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Sales Page Preview</h3>
+                <Button variant="ghost" onClick={() => setSalesPagePreviewOpen(false)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              {/* Hero Section */}
+              <div className="text-center space-y-4 py-12 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg mb-8">
+                <h1 className="text-4xl font-bold">{course.salesPageContent.headline || course.title}</h1>
+                <p className="text-xl text-blue-100">{course.salesPageContent.subheadline || course.description}</p>
+                <div className="flex items-center justify-center gap-4 pt-4">
+                  <div className="text-3xl font-bold">${course.price}</div>
+                  <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
+                    <Play className="w-5 h-5 mr-2" />
+                    Enroll Now
+                  </Button>
+                </div>
+              </div>
+
+              {/* Course Stats */}
+              <div className="grid grid-cols-4 gap-6 text-center mb-8">
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">{course.modules.length}</div>
+                  <div className="text-gray-600">Modules</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-green-600">{totalLessons}</div>
+                  <div className="text-gray-600">Lessons</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-purple-600">{course.currentEnrollments}</div>
+                  <div className="text-gray-600">Students</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-orange-600">{course.analytics.averageRating}★</div>
+                  <div className="text-gray-600">Rating</div>
+                </div>
+              </div>
+
+              {/* What You'll Learn */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div>
+                  <h3 className="text-2xl font-bold mb-4">What You'll Learn</h3>
+                  <ul className="space-y-2">
+                    {course.learningObjectives.map((objective, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                        <span>{objective}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div>
+                  <h3 className="text-2xl font-bold mb-4">Course Features</h3>
+                  <ul className="space-y-2">
+                    <li className="flex items-center gap-2">
+                      <Video className="w-5 h-5 text-blue-500" />
+                      <span>HD Video Content</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Download className="w-5 h-5 text-green-500" />
+                      <span>Downloadable Resources</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Award className="w-5 h-5 text-purple-500" />
+                      <span>Certificate of Completion</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-orange-500" />
+                      <span>Lifetime Access</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Course Curriculum */}
+              <div className="mb-8">
+                <h3 className="text-2xl font-bold mb-4">Course Curriculum</h3>
+                <div className="space-y-3">
+                  {course.modules.slice(0, 3).map((module, index) => (
+                    <div key={module.id} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold">Module {index + 1}: {module.title}</h4>
+                        <Badge variant="outline">{module.lessons.length} lessons</Badge>
+                      </div>
+                      <p className="text-gray-600 text-sm">{module.description}</p>
+                    </div>
+                  ))}
+                  {course.modules.length > 3 && (
+                    <div className="text-center py-4">
+                      <Badge variant="secondary">
+                        +{course.modules.length - 3} more modules
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Instructor */}
+              <div className="border rounded-lg p-6 bg-gray-50 mb-8">
+                <h3 className="text-2xl font-bold mb-4">Your Instructor</h3>
+                <div className="flex items-start gap-4">
+                  <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                    {course.authorName.charAt(0)}
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-lg">{course.authorName}</h4>
+                    <p className="text-gray-600">{course.authorBio}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Call to Action */}
+              <div className="text-center py-8 bg-gray-50 rounded-lg">
+                <h3 className="text-2xl font-bold mb-4">Ready to Start Learning?</h3>
+                <p className="text-gray-600 mb-6">Join {course.currentEnrollments} students already enrolled</p>
+                <Button size="lg" className="bg-green-600 hover:bg-green-700">
+                  <Play className="w-5 h-5 mr-2" />
+                  Enroll Now for ${course.price}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hidden file inputs */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        className="hidden"
+        multiple
+        onChange={(e) => handleFileUpload(e, 'document')}
       />
     </div>
   );

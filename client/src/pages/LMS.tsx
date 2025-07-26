@@ -523,7 +523,7 @@ export default function LMS() {
     setSelectedCourse({ ...selectedCourse, modules: newModules });
   };
 
-  
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -960,7 +960,7 @@ export default function LMS() {
                                                             <GripVertical className="w-4 h-4 text-gray-400" />
                                                           </div>
                                                           <div className={`p-2 rounded-lg `}>
-                                                           
+
                                                           </div>
                                                           <div>
                                                             <h4 className="font-medium">{lesson.title}</h4>
@@ -1292,7 +1292,7 @@ export default function LMS() {
                             <div key={lesson.id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                               <div className="flex items-center gap-3">
                                 <div className={`p-1 rounded `}>
-                                  
+
                                 </div>
                                 <div>
                                   <p className="font-medium">{lesson.title}</p>
