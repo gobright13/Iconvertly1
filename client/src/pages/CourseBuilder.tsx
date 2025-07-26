@@ -1480,8 +1480,7 @@ export default function CourseBuilder() {
     thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400',
     promoVideo: '',
     authorName: 'John Smith',
-    authorBio: 'Digital Marketing Expert with 10+ years of experience<replit_final_file>
-helping businesses grow online',
+    authorBio: 'Digital Marketing Expert with 10+ years of experience helping businesses grow online',
     authorAvatar: '',
     enrollmentLimit: 500,
     enrollmentType: 'automatic',
