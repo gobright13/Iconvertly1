@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,10 @@ import {
   Target,
   Zap,
   Save,
-  Eye
+  Eye,
+  Lock,
+  Unlock,
+  DollarSign
 } from 'lucide-react';
 import { DragAndDropCourseBuilder } from './DragAndDropCourseBuilder';
 
@@ -39,7 +43,11 @@ export function CourseBuilder() {
       students: 342,
       modules: 8,
       lastUpdate: '2 days ago',
-      progress: 100
+      progress: 100,
+      price: 297,
+      enrollmentLimit: 500,
+      currentEnrollments: 342,
+      isLocked: false
     },
     {
       id: 2,
@@ -49,7 +57,11 @@ export function CourseBuilder() {
       students: 0,
       modules: 6,
       lastUpdate: '1 week ago',
-      progress: 60
+      progress: 60,
+      price: 197,
+      enrollmentLimit: 300,
+      currentEnrollments: 0,
+      isLocked: true
     },
     {
       id: 3,
@@ -59,34 +71,44 @@ export function CourseBuilder() {
       students: 0,
       modules: 10,
       lastUpdate: '3 days ago',
-      progress: 30
+      progress: 30,
+      price: 397,
+      enrollmentLimit: 200,
+      currentEnrollments: 0,
+      isLocked: false
     }
   ];
 
   const courseTemplates = [
     {
       id: 1,
-      name: 'Marketing Course',
-      description: 'Complete marketing course structure',
+      name: 'Digital Marketing Course',
+      description: 'Complete marketing course structure with 8 modules',
       modules: 8,
       lessons: 32,
-      category: 'Marketing'
+      category: 'Marketing',
+      estimatedPrice: 297,
+      features: ['Video lessons', 'Quizzes', 'Assignments', 'Certificates']
     },
     {
       id: 2,
-      name: 'Business Strategy',
-      description: 'Strategic business planning course',
+      name: 'Business Strategy Course',
+      description: 'Strategic business planning and execution',
       modules: 6,
       lessons: 24,
-      category: 'Business'
+      category: 'Business',
+      estimatedPrice: 197,
+      features: ['Case studies', 'Templates', 'Action plans', 'Live sessions']
     },
     {
       id: 3,
-      name: 'Technical Training',
-      description: 'Technical skills development course',
+      name: 'Technical Training Course',
+      description: 'Comprehensive technical skills development',
       modules: 10,
       lessons: 40,
-      category: 'Technology'
+      category: 'Technology',
+      estimatedPrice: 397,
+      features: ['Hands-on labs', 'Projects', 'Code reviews', 'Mentorship']
     }
   ];
 
@@ -130,7 +152,7 @@ export function CourseBuilder() {
             Course Builder
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Create, manage, and publish your online courses
+            Create, manage, and publish your online courses with advanced features
           </p>
         </div>
         <div className="flex gap-2">
@@ -139,16 +161,85 @@ export function CourseBuilder() {
             onClick={() => window.location.href = '/course-builder'}
           >
             <BookOpen className="w-4 h-4 mr-2" />
-            Drag & Drop Builder
+            Advanced Builder
           </Button>
           <Button 
-            className="bg-coral-500 hover:bg-coral-600"
+            className="bg-coral-500 hover:bg-coral-600 text-white font-semibold"
             onClick={() => setShowBuilder(true)}
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Create Course
+            <Plus className="w-4 h-4 mr-2 text-white" />
+            <span className="text-white">Create Course</span>
           </Button>
         </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Courses</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{courses.length}</p>
+                <p className="text-xs text-green-600 dark:text-green-400">
+                  {courses.filter(c => c.status === 'published').length} published
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Students</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {courses.reduce((total, course) => total + course.students, 0)}
+                </p>
+                <p className="text-xs text-green-600 dark:text-green-400">Across all courses</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Revenue</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  ${courses.reduce((total, course) => total + (course.price * course.students), 0).toLocaleString()}
+                </p>
+                <p className="text-xs text-green-600 dark:text-green-400">Total earned</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg. Completion</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">87%</p>
+                <p className="text-xs text-green-600 dark:text-green-400">+5% this month</p>
+              </div>
+              <div className="w-12 h-12 bg-coral-100 dark:bg-coral-900 rounded-lg flex items-center justify-center">
+                <Target className="w-6 h-6 text-coral-600 dark:text-coral-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Quick Start Templates */}
@@ -159,7 +250,7 @@ export function CourseBuilder() {
             Quick Start Templates
           </CardTitle>
           <CardDescription>
-            Get started quickly with pre-built course structures
+            Get started quickly with pre-built course structures and AI assistance
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -168,6 +259,7 @@ export function CourseBuilder() {
               <div
                 key={template.id}
                 className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
+                onClick={() => setShowBuilder(true)}
               >
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-medium text-gray-900 dark:text-white">
@@ -180,13 +272,23 @@ export function CourseBuilder() {
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                   {template.description}
                 </p>
-                <div className="flex items-center justify-between">
-                  <div className="text-xs text-gray-500">
-                    {template.modules} modules • {template.lessons} lessons
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>{template.modules} modules • {template.lessons} lessons</span>
+                    <span className="font-medium text-green-600">${template.estimatedPrice}</span>
                   </div>
-                  <Button size="sm" variant="outline">
-                    Use Template
-                  </Button>
+                  <div className="flex flex-wrap gap-1">
+                    {template.features.slice(0, 2).map((feature, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {feature}
+                      </Badge>
+                    ))}
+                    {template.features.length > 2 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{template.features.length - 2} more
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -202,7 +304,7 @@ export function CourseBuilder() {
             AI Course Generator
           </CardTitle>
           <CardDescription>
-            Generate complete course outline and content with AI
+            Generate complete course outline and content with AI assistance
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -230,7 +332,10 @@ export function CourseBuilder() {
                   rows={3}
                 />
               </div>
-              <Button className="w-full bg-purple-600 hover:bg-purple-700">
+              <Button 
+                className="w-full bg-purple-600 hover:bg-purple-700"
+                onClick={() => setShowBuilder(true)}
+              >
                 <Zap className="w-4 h-4 mr-2" />
                 Generate Course with AI
               </Button>
@@ -241,11 +346,13 @@ export function CourseBuilder() {
               </h4>
               <ul className="space-y-1 text-sm text-purple-700 dark:text-purple-300">
                 <li>• Complete course outline and structure</li>
-                <li>• Module and lesson titles</li>
+                <li>• Module and lesson titles with descriptions</li>
                 <li>• Learning objectives for each section</li>
                 <li>• Suggested content and activities</li>
                 <li>• Quiz questions and assignments</li>
                 <li>• Resource recommendations</li>
+                <li>• Pricing suggestions based on content</li>
+                <li>• Marketing copy and course descriptions</li>
               </ul>
             </div>
           </div>
@@ -257,16 +364,16 @@ export function CourseBuilder() {
         <CardHeader>
           <CardTitle>Your Courses</CardTitle>
           <CardDescription>
-            Manage your existing courses and track progress
+            Manage your existing courses and track performance
           </CardDescription>
         </CardHeader>
         <CardContent>
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
             <TabsList>
-              <TabsTrigger value="all">All Courses</TabsTrigger>
-              <TabsTrigger value="published">Published</TabsTrigger>
-              <TabsTrigger value="draft">Drafts</TabsTrigger>
+              <TabsTrigger value="all">All Courses ({courses.length})</TabsTrigger>
+              <TabsTrigger value="published">Published ({courses.filter(c => c.status === 'published').length})</TabsTrigger>
+              <TabsTrigger value="draft">Drafts ({courses.filter(c => c.status === 'draft').length})</TabsTrigger>
               <TabsTrigger value="archived">Archived</TabsTrigger>
             </TabsList>
           </Tabs>
@@ -274,25 +381,26 @@ export function CourseBuilder() {
           {/* Course List */}
           <div className="space-y-4">
             {filteredCourses.map((course) => (
-              <div key={course.id} className="flex items-center justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div key={course.id} className="flex items-center justify-between p-6 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                    <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                    <BookOpen className="w-8 h-8 text-white" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-3 mb-1">
                       <h4 className="font-medium text-gray-900 dark:text-white">{course.title}</h4>
                       <Badge className={`text-xs ${getStatusColor(course.status)}`}>
                         {course.status}
                       </Badge>
+                      {course.isLocked && <Lock className="w-4 h-4 text-gray-500" />}
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                       {course.description}
                     </p>
-                    <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                    <div className="flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
                       <div className="flex items-center gap-1">
                         <Users className="w-4 h-4" />
-                        <span>{course.students} students</span>
+                        <span>{course.currentEnrollments}/{course.enrollmentLimit} students</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <BookOpen className="w-4 h-4" />
@@ -306,6 +414,10 @@ export function CourseBuilder() {
                         <Target className="w-4 h-4" />
                         <span>{course.progress}% complete</span>
                       </div>
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="w-4 h-4" />
+                        <span className="font-medium text-green-600">${course.price}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -316,7 +428,11 @@ export function CourseBuilder() {
                       Preview
                     </Button>
                   )}
-                  <Button size="sm" variant="outline">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setShowBuilder(true)}
+                  >
                     <Edit className="w-4 h-4 mr-2" />
                     Edit
                   </Button>
@@ -333,9 +449,9 @@ export function CourseBuilder() {
       {/* Import & Bulk Actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Bulk Actions & Import</CardTitle>
+          <CardTitle>Advanced Features</CardTitle>
           <CardDescription>
-            Import existing content or perform bulk operations
+            Import existing content, bulk operations, and advanced tools
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -346,7 +462,7 @@ export function CourseBuilder() {
                 <div className="text-left">
                   <div className="font-medium">Import SCORM</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Import SCORM packages
+                    Import SCORM packages and content
                   </div>
                 </div>
               </div>
@@ -356,9 +472,9 @@ export function CourseBuilder() {
               <div className="flex items-center gap-3">
                 <FileText className="w-5 h-5 text-green-500" />
                 <div className="text-left">
-                  <div className="font-medium">Import from PDF</div>
+                  <div className="font-medium">Bulk PDF Import</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Convert PDFs to lessons
+                    Convert PDFs to lessons automatically
                   </div>
                 </div>
               </div>
@@ -368,9 +484,9 @@ export function CourseBuilder() {
               <div className="flex items-center gap-3">
                 <Video className="w-5 h-5 text-purple-500" />
                 <div className="text-left">
-                  <div className="font-medium">Bulk Video Upload</div>
+                  <div className="font-medium">Video Processing</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Upload multiple videos
+                    Auto-transcription and chapters
                   </div>
                 </div>
               </div>

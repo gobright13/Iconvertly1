@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -6,6 +7,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  DndContext, 
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { 
   GripVertical, 
   ChevronDown, 
@@ -14,17 +32,25 @@ import {
   Edit, 
   Trash2,
   Save,
-  X
+  X,
+  Lock,
+  Unlock,
+  PlayCircle,
+  Clock
 } from 'lucide-react';
 
 interface Lesson {
   id: string;
   title: string;
-  type: 'video' | 'text' | 'quiz' | 'assignment';
+  type: 'video' | 'text' | 'quiz' | 'assignment' | 'html' | 'link';
   duration: number;
   content?: string;
   videoUrl?: string;
+  htmlContent?: string;
+  externalLink?: string;
   isCompleted: boolean;
+  isLocked: boolean;
+  order: number;
 }
 
 interface Module {
@@ -33,6 +59,147 @@ interface Module {
   description: string;
   lessons: Lesson[];
   isExpanded: boolean;
+  order: number;
+  isLocked: boolean;
+}
+
+interface SortableLessonItemProps {
+  lesson: Lesson;
+  moduleId: string;
+  onUpdateLesson: (moduleId: string, lessonId: string, updates: Partial<Lesson>) => void;
+  onDeleteLesson: (moduleId: string, lessonId: string) => void;
+  onEditContent: (moduleId: string, lesson: Lesson) => void;
+  getLessonIcon: (type: string) => React.ReactNode;
+  getTypeColor: (type: string) => string;
+}
+
+function SortableLessonItem({ 
+  lesson, 
+  moduleId, 
+  onUpdateLesson, 
+  onDeleteLesson, 
+  onEditContent,
+  getLessonIcon, 
+  getTypeColor 
+}: SortableLessonItemProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(lesson.title);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: lesson.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const handleSave = () => {
+    onUpdateLesson(moduleId, lesson.id, { title: editTitle });
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditTitle(lesson.title);
+    setIsEditing(false);
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing p-1 text-gray-400 hover:text-gray-600"
+      >
+        <GripVertical className="w-4 h-4" />
+      </div>
+
+      <div className="flex items-center gap-2">
+        {getLessonIcon(lesson.type)}
+        <Badge className={`text-xs ${getTypeColor(lesson.type)}`}>
+          {lesson.type}
+        </Badge>
+      </div>
+
+      <div className="flex-1">
+        {isEditing ? (
+          <div className="flex items-center gap-2">
+            <Input
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              className="h-8"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSave();
+                if (e.key === 'Escape') handleCancel();
+              }}
+            />
+            <Button size="sm" onClick={handleSave}>
+              <Save className="w-3 h-3" />
+            </Button>
+            <Button size="sm" variant="ghost" onClick={handleCancel}>
+              <X className="w-3 h-3" />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <span className="font-medium">{lesson.title}</span>
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                <span>{lesson.duration}m</span>
+              </div>
+              {lesson.isLocked && <Lock className="w-3 h-3" />}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center gap-1">
+        <Button 
+          size="sm" 
+          variant="ghost"
+          onClick={() => onEditContent(moduleId, lesson)}
+          title="Edit Content"
+        >
+          <Edit className="w-3 h-3" />
+        </Button>
+        <Button 
+          size="sm" 
+          variant="ghost"
+          onClick={() => setIsEditing(!isEditing)}
+          title="Edit Title"
+        >
+          <Edit className="w-3 h-3" />
+        </Button>
+        <Button 
+          size="sm" 
+          variant="ghost"
+          onClick={() => onUpdateLesson(moduleId, lesson.id, { isLocked: !lesson.isLocked })}
+          title={lesson.isLocked ? "Unlock" : "Lock"}
+        >
+          {lesson.isLocked ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+        </Button>
+        <Button 
+          size="sm" 
+          variant="ghost"
+          onClick={() => onDeleteLesson(moduleId, lesson.id)}
+          title="Delete"
+        >
+          <Trash2 className="w-3 h-3" />
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 interface SortableModuleItemProps {
@@ -40,9 +207,10 @@ interface SortableModuleItemProps {
   moduleIndex: number;
   onUpdateModule: (moduleId: string, updates: Partial<Module>) => void;
   onDeleteModule: (moduleId: string) => void;
-  onAddLesson: (moduleId: string) => void;
+  onAddLesson: (moduleId: string, type?: Lesson['type']) => void;
   onUpdateLesson: (moduleId: string, lessonId: string, updates: Partial<Lesson>) => void;
   onDeleteLesson: (moduleId: string, lessonId: string) => void;
+  onEditContent: (moduleId: string, lesson: Lesson) => void;
   getLessonIcon: (type: string) => React.ReactNode;
   getTypeColor: (type: string) => string;
 }
@@ -55,13 +223,13 @@ export function SortableModuleItem({
   onAddLesson,
   onUpdateLesson,
   onDeleteLesson,
+  onEditContent,
   getLessonIcon,
-  getTypeColor
+  getTypeColor,
 }: SortableModuleItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(module.title);
   const [editDescription, setEditDescription] = useState(module.description);
-  const [editingLesson, setEditingLesson] = useState<string | null>(null);
 
   const {
     attributes,
@@ -69,14 +237,41 @@ export function SortableModuleItem({
     setNodeRef,
     transform,
     transition,
-  } = useSortable({ id: module.id });
+    isDragging,
+  } = useSortable({ id: `module-${module.id}` });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.5 : 1,
   };
 
-  const handleSaveModule = () => {
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    if (activeId === overId) return;
+
+    const oldIndex = module.lessons.findIndex(lesson => lesson.id === activeId);
+    const newIndex = module.lessons.findIndex(lesson => lesson.id === overId);
+
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const newLessons = arrayMove(module.lessons, oldIndex, newIndex);
+      onUpdateModule(module.id, { lessons: newLessons });
+    }
+  };
+
+  const handleSave = () => {
     onUpdateModule(module.id, { 
       title: editTitle, 
       description: editDescription 
@@ -84,207 +279,173 @@ export function SortableModuleItem({
     setIsEditing(false);
   };
 
-  const handleSaveLesson = (lesson: Lesson, newTitle: string) => {
-    onUpdateLesson(module.id, lesson.id, { title: newTitle });
-    setEditingLesson(null);
+  const handleCancel = () => {
+    setEditTitle(module.title);
+    setEditDescription(module.description);
+    setIsEditing(false);
   };
 
-  const toggleExpanded = () => {
-    onUpdateModule(module.id, { isExpanded: !module.isExpanded });
-  };
-
-  const lessonTypes = [
-    { value: 'video', label: 'Video', color: 'bg-blue-100 text-blue-700' },
-    { value: 'text', label: 'Text', color: 'bg-green-100 text-green-700' },
-    { value: 'quiz', label: 'Quiz', color: 'bg-orange-100 text-orange-700' },
-    { value: 'assignment', label: 'Assignment', color: 'bg-purple-100 text-purple-700' }
-  ];
+  const totalDuration = module.lessons.reduce((total, lesson) => total + lesson.duration, 0);
 
   return (
     <div ref={setNodeRef} style={style}>
-      <Card className="border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-coral-300">
-        <CardContent className="p-4">
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
           {/* Module Header */}
-          <div className="flex items-center gap-3 mb-3">
-            <div 
-              {...attributes} 
-              {...listeners}
-              className="cursor-grab hover:cursor-grabbing"
-            >
-              <GripVertical className="w-5 h-5 text-gray-400" />
-            </div>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleExpanded}
-              className="p-1"
-            >
-              {module.isExpanded ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
-            </Button>
+          <div className="p-4 bg-gray-50 dark:bg-gray-800 border-b">
+            <div className="flex items-center gap-3">
+              <div
+                {...attributes}
+                {...listeners}
+                className="cursor-grab active:cursor-grabbing p-1 text-gray-400 hover:text-gray-600"
+              >
+                <GripVertical className="w-5 h-5" />
+              </div>
 
-            <div className="flex-1">
-              {isEditing ? (
-                <div className="space-y-2">
-                  <Input
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    placeholder="Module title"
-                  />
-                  <Textarea
-                    value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
-                    placeholder="Module description"
-                    rows={2}
-                  />
-                </div>
-              ) : (
-                <div>
-                  <h3 className="font-medium text-gray-900 dark:text-white">
-                    Module {moduleIndex + 1}: {module.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {module.description}
-                  </p>
-                </div>
-              )}
-            </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onUpdateModule(module.id, { isExpanded: !module.isExpanded })}
+              >
+                {module.isExpanded ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                )}
+              </Button>
 
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs">
-                {module.lessons.length} lessons
-              </Badge>
-              
-              {isEditing ? (
-                <div className="flex gap-1">
-                  <Button size="sm" onClick={handleSaveModule}>
-                    <Save className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={() => {
-                      setIsEditing(false);
-                      setEditTitle(module.title);
-                      setEditDescription(module.description);
-                    }}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex gap-1">
-                  <Button 
-                    size="sm" 
-                    variant="ghost"
-                    onClick={() => setIsEditing(true)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost"
-                    onClick={() => onDeleteModule(module.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
+              <div className="flex-1">
+                {isEditing ? (
+                  <div className="space-y-2">
+                    <Input
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      placeholder="Module title"
+                      className="font-medium"
+                    />
+                    <Textarea
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                      placeholder="Module description"
+                      rows={2}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-medium text-gray-900 dark:text-white">
+                        Module {moduleIndex + 1}: {module.title}
+                      </h4>
+                      {module.isLocked && <Lock className="w-4 h-4 text-gray-500" />}
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {module.description}
+                    </p>
+                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                      <span>{module.lessons.length} lessons</span>
+                      <span>{totalDuration} minutes</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {isEditing ? (
+                  <>
+                    <Button size="sm" onClick={handleSave}>
+                      <Save className="w-4 h-4" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={handleCancel}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onUpdateModule(module.id, { isLocked: !module.isLocked })}
+                      title={module.isLocked ? "Unlock Module" : "Lock Module"}
+                    >
+                      {module.isLocked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setIsEditing(true)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onDeleteModule(module.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Module Content */}
           {module.isExpanded && (
-            <div className="ml-8 space-y-3">
-              {/* Lessons */}
-              {module.lessons.map((lesson, lessonIndex) => (
-                <div key={lesson.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div className="flex items-center gap-2 flex-1">
-                    <div className="w-6 h-6 flex items-center justify-center">
-                      {getLessonIcon(lesson.type)}
-                    </div>
-                    
-                    {editingLesson === lesson.id ? (
-                      <div className="flex items-center gap-2 flex-1">
-                        <Input
-                          defaultValue={lesson.title}
-                          onBlur={(e) => handleSaveLesson(lesson, e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              handleSaveLesson(lesson, e.currentTarget.value);
-                            }
-                            if (e.key === 'Escape') {
-                              setEditingLesson(null);
-                            }
-                          }}
-                          autoFocus
-                          className="h-8"
-                        />
-                        <select
-                          value={lesson.type}
-                          onChange={(e) => onUpdateLesson(module.id, lesson.id, { 
-                            type: e.target.value as Lesson['type'] 
-                          })}
-                          className="h-8 text-sm border rounded px-2"
-                        >
-                          {lessonTypes.map(type => (
-                            <option key={type.value} value={type.value}>
-                              {type.label}
-                            </option>
-                          ))}
-                        </select>
-                        <Input
-                          type="number"
-                          value={lesson.duration}
-                          onChange={(e) => onUpdateLesson(module.id, lesson.id, { 
-                            duration: parseInt(e.target.value) || 0 
-                          })}
-                          className="h-8 w-20"
-                          placeholder="mins"
-                        />
-                      </div>
-                    ) : (
-                      <div 
-                        className="flex items-center gap-2 flex-1 cursor-pointer"
-                        onClick={() => setEditingLesson(lesson.id)}
-                      >
-                        <span className="font-medium text-sm">
-                          {lessonIndex + 1}. {lesson.title}
-                        </span>
-                        <Badge className={`text-xs ${getTypeColor(lesson.type)}`}>
-                          {lesson.type}
-                        </Badge>
-                        <span className="text-xs text-gray-500">
-                          {lesson.duration} min
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => onDeleteLesson(module.id, lesson.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h5 className="font-medium text-gray-900 dark:text-white">Lessons</h5>
+                <div className="flex gap-2">
+                  <Select onValueChange={(type: Lesson['type']) => onAddLesson(module.id, type)}>
+                    <SelectTrigger asChild>
+                      <Button size="sm" variant="outline">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Lesson
+                      </Button>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="video">Video Lesson</SelectItem>
+                      <SelectItem value="text">Text Lesson</SelectItem>
+                      <SelectItem value="html">HTML Content</SelectItem>
+                      <SelectItem value="link">External Link</SelectItem>
+                      <SelectItem value="quiz">Quiz</SelectItem>
+                      <SelectItem value="assignment">Assignment</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              ))}
+              </div>
 
-              {/* Add Lesson Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onAddLesson(module.id)}
-                className="w-full border-dashed"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Lesson
-              </Button>
+              {module.lessons.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <PlayCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>No lessons yet. Add your first lesson above.</p>
+                </div>
+              ) : (
+                <DndContext 
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext 
+                    items={module.lessons.map(l => l.id)} 
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-2">
+                      {module.lessons.map((lesson) => (
+                        <SortableLessonItem
+                          key={lesson.id}
+                          lesson={lesson}
+                          moduleId={module.id}
+                          onUpdateLesson={onUpdateLesson}
+                          onDeleteLesson={onDeleteLesson}
+                          onEditContent={onEditContent}
+                          getLessonIcon={getLessonIcon}
+                          getTypeColor={getTypeColor}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              )}
             </div>
           )}
         </CardContent>
