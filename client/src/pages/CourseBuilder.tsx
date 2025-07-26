@@ -49,7 +49,8 @@ import {
   Target,
   BarChart3,
   Calendar,
-  Mail
+  Mail,
+  Zap
 } from "lucide-react";
 
 interface Course {
@@ -76,6 +77,7 @@ interface Course {
   requirements: string[];
   outcomes: string[];
   targetAudience: string;
+  status?: string;
 }
 
 interface Module {
@@ -119,7 +121,7 @@ const AIWritingPad: React.FC<{
 
   const generateContent = async () => {
     if (!prompt.trim()) return;
-    
+
     setIsGenerating(true);
     // Simulate AI content generation
     setTimeout(() => {
@@ -142,7 +144,7 @@ Learn how to apply these concepts in real-world scenarios with hands-on exercise
 
 ## Conclusion
 By mastering these concepts, you'll be equipped with the knowledge and skills needed to excel in this area.`;
-      
+
       setGeneratedContent(content);
       setIsGenerating(false);
       toast.success("Content generated successfully!");
@@ -171,7 +173,7 @@ By mastering these concepts, you'll be equipped with the knowledge and skills ne
             Generate course content using AI voice or text prompts
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {/* Input Section */}
           <div className="space-y-4">
@@ -186,7 +188,7 @@ By mastering these concepts, you'll be equipped with the knowledge and skills ne
                 />
               </div>
             </div>
-            
+
             <div className="flex justify-between">
               <Button
                 variant="outline"
@@ -197,7 +199,7 @@ By mastering these concepts, you'll be equipped with the knowledge and skills ne
                 <Mic className={`h-4 w-4 ${isListening ? 'text-red-500' : ''}`} />
                 {isListening ? 'Listening...' : 'Voice Input'}
               </Button>
-              
+
               <Button
                 onClick={generateContent}
                 disabled={isGenerating || !prompt.trim()}
@@ -256,10 +258,304 @@ By mastering these concepts, you'll be equipped with the knowledge and skills ne
   );
 };
 
+interface DragItem {
+  id: string;
+  type: 'module' | 'lesson';
+  module?: Module;
+  lesson?: Lesson;
+}
+
+const DragAndDropCourseBuilder: React.FC = () => {
+  const [modules, setModules] = useState<Module[]>([]);
+  const [lessons, setLessons] = useState<{[moduleId: string]: Lesson[]}>({});
+  const [newModuleTitle, setNewModuleTitle] = useState('');
+  const [newLessonTitle, setNewLessonTitle] = useState('');
+  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [showContentEditor, setShowContentEditor] = useState(false);
+  const [showAIWritingPad, setShowAIWritingPad] = useState(false);
+
+  const handleModuleDrop = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const items = Array.from(modules);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setModules(items);
+  };
+
+  const handleLessonDrop = (moduleId: string, result: DropResult) => {
+    if (!result.destination) return;
+
+    const currentLessons = lessons[moduleId] || [];
+    const items = Array.from(currentLessons);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setLessons({...lessons, [moduleId]: items });
+  };
+
+  const addModule = () => {
+    if (!newModuleTitle.trim()) {
+      toast.error("Please enter a module title");
+      return;
+    }
+
+    const newModule: Module = {
+      id: `module-${Date.now()}`,
+      title: newModuleTitle,
+      description: '',
+      lessons: [],
+      isExpanded: true,
+      order: modules.length + 1,
+      isLocked: false
+    };
+
+    setModules([...modules, newModule]);
+    setNewModuleTitle('');
+    toast.success("Module created successfully!");
+  };
+
+  const addLesson = (moduleId: string) => {
+    if (!newLessonTitle.trim()) {
+      toast.error("Please enter a lesson title");
+      return;
+    }
+
+    const newLesson: Lesson = {
+      id: `lesson-${Date.now()}`,
+      title: newLessonTitle,
+      type: 'text',
+      content: '',
+      duration: 0,
+      order: (lessons[moduleId] || []).length + 1,
+      isLocked: false,
+      description: ''
+    };
+
+    setLessons({
+      ...lessons,
+      [moduleId]: [...(lessons[moduleId] || []), newLesson]
+    });
+    setNewLessonTitle('');
+    toast.success("Lesson created successfully!");
+  };
+
+  const toggleModuleExpand = (moduleId: string) => {
+    setModules(modules.map(module =>
+      module.id === moduleId ? { ...module, isExpanded: !module.isExpanded } : module
+    ));
+  };
+
+  const handleLessonClick = (lesson: Lesson) => {
+    setSelectedLesson(lesson);
+    setShowContentEditor(true);
+  };
+
+  const getContentIcon = (type: string) => {
+    switch (type) {
+      case 'video': return <Play className="h-4 w-4" />;
+      case 'text': return <FileText className="h-4 w-4" />;
+      case 'audio': return <Headphones className="h-4 w-4" />;
+      case 'image': return <Image className="h-4 w-4" />;
+      case 'download': return <Download className="h-4 w-4" />;
+      case 'quiz': return <HelpCircle className="h-4 w-4" />;
+      case 'assignment': return <Edit className="h-4 w-4" />;
+      case 'live': return <Video className="h-4 w-4" />;
+      case 'html': return <Globe className="h-4 w-4" />;
+      default: return <BookOpen className="h-4 w-4" />;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Add Module */}
+      <div className="flex items-center space-x-4">
+        <Input
+          placeholder="Enter module title"
+          value={newModuleTitle}
+          onChange={(e) => setNewModuleTitle(e.target.value)}
+        />
+        <Button onClick={addModule} className="bg-blue-500 hover:bg-blue-600 text-white">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Module
+        </Button>
+      </div>
+
+      {/* Drag and Drop Context */}
+      <DragDropContext onDragEnd={handleModuleDrop}>
+        <Droppable droppableId="modules" type="module">
+          {(provided) => (
+            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
+              {modules.map((module, index) => (
+                <Draggable key={module.id} draggableId={module.id} index={index}>
+                  {(provided) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden"
+                    >
+                      {/* Module Header */}
+                      <div className="px-4 py-3 bg-gray-100 dark:bg-gray-700 flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <GripVertical {...provided.dragHandleProps} className="h-5 w-5 text-gray-500 cursor-grab" />
+                          <Button variant="ghost" onClick={() => toggleModuleExpand(module.id)} className="text-lg font-semibold">
+                            {module.title}
+                            {module.isExpanded ? <ChevronDown className="h-4 w-4 ml-2" /> : <ChevronRight className="h-4 w-4 ml-2" />}
+                          </Button>
+                        </div>
+                        <div>
+                          <Button variant="outline" size="icon" onClick={() => {setSelectedModuleId(module.id);}}>
+                            <Settings className="h-4 w-4" />
+                          </Button>
+                          <Button variant="destructive" size="icon">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Module Content (Lessons) */}
+                      {module.isExpanded && (
+                        <div className="p-4">
+                          {/* Add Lesson Input */}
+                          <div className="flex items-center space-x-4 mb-4">
+                            <Input
+                              placeholder="Enter lesson title"
+                              value={newLessonTitle}
+                              onChange={(e) => setNewLessonTitle(e.target.value)}
+                            />
+                            <Button onClick={() => addLesson(module.id)} className="bg-green-500 hover:bg-green-600 text-white">
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add Lesson
+                            </Button>
+                          </div>
+
+                          {/* Lesson Drag and Drop */}
+                          <DragDropContext onDragEnd={(result) => handleLessonDrop(module.id, result)}>
+                            <Droppable droppableId={`lessons-${module.id}`} type="lesson">
+                              {(provided) => (
+                                <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                                  {(lessons[module.id] || []).map((lesson, index) => (
+                                    <Draggable key={lesson.id} draggableId={lesson.id} index={index}>
+                                      {(provided) => (
+                                        <div
+                                          ref={provided.innerRef}
+                                          {...provided.draggableProps}
+                                          {...provided.dragHandleProps}
+                                          className="bg-gray-50 dark:bg-gray-900 border rounded-md p-3 flex items-center justify-between"
+                                        >
+                                          <div className="flex items-center space-x-2">
+                                            <GripVertical className="h-4 w-4 text-gray-400 cursor-grab" />
+                                            {getContentIcon(lesson.type)}
+                                            <span className="text-sm font-medium">{lesson.title}</span>
+                                          </div>
+                                          <div>
+                                            <Button variant="ghost" size="icon" onClick={() => handleLessonClick(lesson)}>
+                                              <Edit className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="destructive" size="icon">
+                                              <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </Draggable>
+                                  ))}
+                                  {provided.placeholder}
+                                </div>
+                              )}
+                            </Droppable>
+                          </DragDropContext>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+
+      {/* Content Editor */}
+      <Dialog open={showContentEditor} onOpenChange={() => setShowContentEditor(false)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5 text-blue-500" />
+              Content Editor
+            </DialogTitle>
+            <DialogDescription>
+              Edit the content of the selected lesson
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedLesson && (
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <Label>Lesson Title</Label>
+                <Input value={selectedLesson.title} readOnly />
+              </div>
+
+              <div className="space-y-4">
+                <Label>Content</Label>
+                <Textarea
+                  value={selectedLesson.content}
+                  onChange={(e) => {
+                    if (selectedLesson) {
+                      setSelectedLesson({ ...selectedLesson, content: e.target.value });
+                    }
+                  }}
+                  className="min-h-[300px]"
+                />
+              </div>
+
+              <div className="flex justify-between">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAIWritingPad(true)}
+                  className="bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                >
+                  <Bot className="h-4 w-4 mr-2" />
+                  AI Writing Pad
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    setShowContentEditor(false);
+                    toast.success("Content saved!");
+                  }}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  Save Content
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Writing Pad */}
+      <AIWritingPad
+        isOpen={showAIWritingPad}
+        onClose={() => setShowAIWritingPad(false)}
+        onContentGenerated={(content) => {
+          if (selectedLesson) {
+            setSelectedLesson({ ...selectedLesson, content });
+          }
+          setShowAIWritingPad(false);
+        }}
+      />
+    </div>
+  );
+};
+
 export default function CourseBuilder() {
   const [currentStep, setCurrentStep] = useState(1); // Step 1: Course Details, Step 2: Content Builder
   const [showAIWritingPad, setShowAIWritingPad] = useState(false);
-  
+
   const [course, setCourse] = useState<Course>({
     id: 'new-course',
     title: '',
@@ -283,7 +579,8 @@ export default function CourseBuilder() {
     courseVideo: '',
     requirements: [],
     outcomes: [],
-    targetAudience: ''
+    targetAudience: '',
+    status: 'Draft'
   });
 
   const [modules, setModules] = useState<Module[]>([]);
@@ -325,7 +622,7 @@ export default function CourseBuilder() {
       toast.error("Please select a course category");
       return;
     }
-    
+
     setCurrentStep(2);
     toast.success("Course details saved! Now build your content.");
   };
@@ -369,7 +666,7 @@ export default function CourseBuilder() {
         {/* Main Content */}
         <div className="max-w-6xl mx-auto p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
+
             {/* Course Information Form */}
             <Card>
               <CardHeader>
@@ -380,7 +677,7 @@ export default function CourseBuilder() {
                 <p className="text-sm text-muted-foreground">Enter your course details and settings</p>
               </CardHeader>
               <CardContent className="space-y-6">
-                
+
                 {/* Basic Info */}
                 <div className="space-y-4">
                   <div>
@@ -529,7 +826,7 @@ export default function CourseBuilder() {
                 <p className="text-sm text-muted-foreground">Define what students will learn and need</p>
               </CardHeader>
               <CardContent className="space-y-6">
-                
+
                 {/* Learning Outcomes */}
                 <div>
                   <Label htmlFor="outcomes">Learning Outcomes</Label>
@@ -651,6 +948,107 @@ export default function CourseBuilder() {
     );
   }
 
+  if (currentStep === 2) {
+    // STEP 2: Advanced Course Builder
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-coral-50 to-navy-50 dark:from-gray-900 dark:to-gray-800">
+        {/* Header */}
+        <div className="bg-white dark:bg-gray-800 shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setCurrentStep(1)}
+                  className="flex items-center text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Details
+                </Button>
+                <Separator orientation="vertical" className="h-6" />
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    Course Builder
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    Create modules and lessons with drag-and-drop interface
+                  </p>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button variant="outline">
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Draft
+                </Button>
+                <Button className="bg-coral-500 hover:bg-coral-600 text-white">
+                  <Eye className="h-4 w-4 mr-2" />
+                  Preview Course
+                </Button>
+                <Button className="bg-green-500 hover:bg-green-600 text-white">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Publish Course
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Course Builder Content */}
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          {/* Course Overview Card */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Course Overview</span>
+                <Badge variant="secondary">{course.status || 'Draft'}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="text-center p-3 bg-blue-50 rounded-lg">
+                  <div className="text-xl font-bold text-blue-600">{course.title}</div>
+                  <div className="text-sm text-blue-600">Course Title</div>
+                </div>
+                <div className="text-center p-3 bg-green-50 rounded-lg">
+                  <div className="text-xl font-bold text-green-600">${course.price}</div>
+                  <div className="text-sm text-green-600">Course Price</div>
+                </div>
+                <div className="text-center p-3 bg-purple-50 rounded-lg">
+                  <div className="text-xl font-bold text-purple-600">{course.category}</div>
+                  <div className="text-sm text-purple-600">Category</div>
+                </div>
+                <div className="text-center p-3 bg-orange-50 rounded-lg">
+                  <div className="text-xl font-bold text-orange-600">{course.difficulty}</div>
+                  <div className="text-sm text-orange-600">Difficulty</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Integration Notice */}
+          <Card className="mb-6 border-blue-200 bg-blue-50">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <Zap className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-blue-900">Advanced Course Builder Active</h4>
+                  <p className="text-sm text-blue-700">
+                    You're now using the professional drag-and-drop course builder with modules, lessons, and content management.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Drag and Drop Course Builder */}
+          <DragAndDropCourseBuilder />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-coral-50 to-navy-50 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
@@ -658,7 +1056,7 @@ export default function CourseBuilder() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Button
+              <Button 
                 variant="ghost"
                 onClick={() => setCurrentStep(1)}
                 className="flex items-center text-muted-foreground hover:text-foreground"
