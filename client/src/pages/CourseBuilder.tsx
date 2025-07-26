@@ -68,7 +68,7 @@ import {
   FolderOpen,
   FileVideo,
   FileAudio,
-  FilePdf,
+  FileText as FilePdf,
   Database,
   PieChart,
   LineChart,
