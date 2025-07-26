@@ -750,7 +750,7 @@ export default function AdvancedFunnelBuilder({ onComplete, onBack, initialTempl
                 className="text-lg font-semibold bg-transparent border-none p-0 focus:ring-0"
               />
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Last saved: {funnelData.lastModified.toLocaleTimeString()}
+                Last saved: {funnelData.lastModified ? funnelData.lastModified.toLocaleTimeString() : 'Never'}
               </p>
             </div>
           </div>
