@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -297,7 +296,7 @@ const ContentEditor: React.FC<{
                 </Button>
               </div>
             </div>
-            
+
             {editingLesson.type === 'html' ? (
               <Textarea
                 className="font-mono text-sm min-h-[400px]"
@@ -418,7 +417,7 @@ export default function LMS() {
       const newModules = Array.from(selectedCourse.modules);
       const [reorderedModule] = newModules.splice(source.index, 1);
       newModules.splice(destination.index, 0, reorderedModule);
-      
+
       // Update order
       newModules.forEach((module, index) => {
         module.order = index + 1;
@@ -429,15 +428,15 @@ export default function LMS() {
     } else if (type === 'lesson') {
       const moduleId = source.droppableId.replace('lessons-', '');
       const destModuleId = destination.droppableId.replace('lessons-', '');
-      
+
       const newModules = selectedCourse.modules.map(module => ({ ...module }));
       const sourceModule = newModules.find(m => m.id === moduleId);
       const destModule = newModules.find(m => m.id === destModuleId);
-      
+
       if (sourceModule && destModule) {
         const [movedLesson] = sourceModule.lessons.splice(source.index, 1);
         destModule.lessons.splice(destination.index, 0, movedLesson);
-        
+
         // Update order
         destModule.lessons.forEach((lesson, index) => {
           lesson.order = index + 1;
@@ -451,7 +450,7 @@ export default function LMS() {
 
   const addModule = () => {
     if (!selectedCourse) return;
-    
+
     const newModule: Module = {
       id: `m${Date.now()}`,
       title: 'New Module',
@@ -524,29 +523,7 @@ export default function LMS() {
     setSelectedCourse({ ...selectedCourse, modules: newModules });
   };
 
-  const getLessonTypeIcon = (type: string) => {
-    switch (type) {
-      case 'video': return <Video className="w-4 h-4" />;
-      case 'text': return <FileText className="w-4 h-4" />;
-      case 'html': return <Globe className="w-4 h-4" />;
-      case 'quiz': return <HelpCircle className="w-4 h-4" />;
-      case 'assignment': return <Award className="w-4 h-4" />;
-      case 'link': return <ExternalLink className="w-4 h-4" />;
-      default: return <FileText className="w-4 h-4" />;
-    }
-  };
-
-  const getLessonTypeBadgeColor = (type: string) => {
-    switch (type) {
-      case 'video': return 'bg-red-100 text-red-800';
-      case 'text': return 'bg-blue-100 text-blue-800';
-      case 'html': return 'bg-green-100 text-green-800';
-      case 'quiz': return 'bg-purple-100 text-purple-800';
-      case 'assignment': return 'bg-orange-100 text-orange-800';
-      case 'link': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
+  
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -735,7 +712,7 @@ export default function LMS() {
                           onChange={(e) => setSelectedCourse({ ...selectedCourse, title: e.target.value })}
                         />
                       </div>
-                      
+
                       <div>
                         <Label>Description</Label>
                         <Textarea 
@@ -811,7 +788,7 @@ export default function LMS() {
                       {/* Enrollment Settings */}
                       <div className="space-y-4">
                         <h3 className="font-semibold">Enrollment Settings</h3>
-                        
+
                         <div className="flex items-center justify-between">
                           <div>
                             <Label>Enrollment Open</Label>
@@ -985,8 +962,8 @@ export default function LMS() {
                                                           <div {...provided.dragHandleProps} className="cursor-grab hover:bg-gray-100 p-1 rounded">
                                                             <GripVertical className="w-4 h-4 text-gray-400" />
                                                           </div>
-                                                          <div className={`p-2 rounded-lg ${getLessonTypeBadgeColor(lesson.type)}`}>
-                                                            {getLessonTypeIcon(lesson.type)}
+                                                          <div className={`p-2 rounded-lg `}>
+                                                           
                                                           </div>
                                                           <div>
                                                             <h4 className="font-medium">{lesson.title}</h4>
@@ -995,7 +972,7 @@ export default function LMS() {
                                                               {lesson.duration} min
                                                               <Badge 
                                                                 variant="outline" 
-                                                                className={`text-xs ${getLessonTypeBadgeColor(lesson.type)}`}
+                                                                className={`text-xs `}
                                                               >
                                                                 {lesson.type}
                                                               </Badge>
@@ -1199,7 +1176,7 @@ export default function LMS() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <h3 className="font-semibold">General Settings</h3>
-                    
+
                     <div className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
                         <Label>AI Content Generation</Label>
@@ -1227,7 +1204,7 @@ export default function LMS() {
 
                   <div className="space-y-4">
                     <h3 className="font-semibold">Course Defaults</h3>
-                    
+
                     <div>
                       <Label>Default Course Category</Label>
                       <Select>
@@ -1303,7 +1280,7 @@ export default function LMS() {
                 <div className="lg:col-span-2">
                   <h1 className="text-3xl font-bold mb-4">{selectedCourse.title}</h1>
                   <p className="text-gray-600 mb-6">{selectedCourse.description}</p>
-                  
+
                   {/* Course Modules */}
                   <div className="space-y-4">
                     <h2 className="text-xl font-semibold">Course Content</h2>
@@ -1317,8 +1294,8 @@ export default function LMS() {
                           {module.lessons.map((lesson, lessonIndex) => (
                             <div key={lesson.id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                               <div className="flex items-center gap-3">
-                                <div className={`p-1 rounded ${getLessonTypeBadgeColor(lesson.type)}`}>
-                                  {getLessonTypeIcon(lesson.type)}
+                                <div className={`p-1 rounded `}>
+                                  
                                 </div>
                                 <div>
                                   <p className="font-medium">{lesson.title}</p>
