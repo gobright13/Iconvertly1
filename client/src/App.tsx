@@ -29,7 +29,7 @@ import MultiChannelSync from "./components/MultiChannelSync";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Webinars from "./pages/Webinars";
-import LMS from "./pages/LMS";
+
 import MembershipDashboard from "./pages/membership/MembershipDashboard";
 import WebinarCreate from "./pages/webinar/WebinarCreate";
 import WebinarManage from "./pages/webinar/WebinarManage";
@@ -143,7 +143,7 @@ const App = () => {
               <Route path="/webinar/create/hybrid" element={<Layout><WebinarCreate /></Layout>} />
               <Route path="/webinar/manage/:id" element={<Layout><WebinarManage /></Layout>} />
               <Route path="/webinar/edit/:id" element={<Layout><WebinarEdit /></Layout>} />
-              <Route path="/lms" element={<Layout><LMS /></Layout>} />
+
               <Route path="/course-builder" element={<CourseBuilder />} />
               <Route path="/membership" element={<Layout><MembershipDashboard /></Layout>} />
               <Route path="/crm" element={<Layout><CRMDashboard /></Layout>} />

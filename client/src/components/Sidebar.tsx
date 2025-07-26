@@ -58,7 +58,6 @@ const navigation = [
     name: "Learning & Growth",
     items: [
       { name: "🎥 Webinars", href: "/webinars", icon: Video },
-      { name: "📚 LMS Platform", href: "/lms", icon: BookOpen },
       { name: "🏛️ Membership Site", href: "/membership", icon: UserCheck },
     ]
   },
