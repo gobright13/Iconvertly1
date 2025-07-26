@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
+import AIVisualEditor from "@/components/AIVisualEditor";
 import { 
   DndContext, 
   DragOverlay, 
@@ -587,17 +588,44 @@ function AIAssistantPanel({ selectedElement, onUpdateElement }: {
 }
 
 // Main Advanced Funnel Builder Component
-export default function AdvancedFunnelBuilder({ onComplete, onBack }: { 
-  onComplete?: (funnel: FunnelData) => void, 
-  onBack?: () => void 
-}) {
-  const [funnelData, setFunnelData] = useState<FunnelData>({
-    id: Date.now().toString(),
-    name: 'New Funnel',
-    elements: [],
-    settings: {},
-    lastModified: new Date()
-  });
+interface AdvancedFunnelBuilderProps {
+  onBack: () => void;
+  onComplete: (funnelData: any) => void;
+  initialTemplate?: any;
+  aiGeneratedData?: any;
+  editingFunnel?: any;
+}
+
+export default function AdvancedFunnelBuilder({ onComplete, onBack, initialTemplate, aiGeneratedData, editingFunnel }: AdvancedFunnelBuilderProps) {
+  const [showVisualEditor, setShowVisualEditor] = useState(false);
+  
+  // Initialize funnel data based on props
+  const initializeFunnelData = () => {
+    if (aiGeneratedData) {
+      return aiGeneratedData;
+    }
+    if (initialTemplate) {
+      return {
+        id: Date.now().toString(),
+        name: initialTemplate.name,
+        steps: initialTemplate.steps,
+        template: initialTemplate,
+        lastModified: new Date()
+      };
+    }
+    if (editingFunnel) {
+      return editingFunnel;
+    }
+    return {
+      id: Date.now().toString(),
+      name: 'New Funnel',
+      elements: [],
+      settings: {},
+      lastModified: new Date()
+    };
+  };
+
+  const [funnelData, setFunnelData] = useState<FunnelData>(initializeFunnelData());
   const [selectedElement, setSelectedElement] = useState<ElementData | null>(null);
   const [activeCategory, setActiveCategory] = useState('Basic');
   const [draggedItem, setDraggedItem] = useState<any>(null);
@@ -691,6 +719,20 @@ export default function AdvancedFunnelBuilder({ onComplete, onBack }: {
     return () => clearInterval(interval);
   }, [funnelData]);
 
+  // Show AI Visual Editor if requested
+  if (showVisualEditor) {
+    return (
+      <AIVisualEditor
+        funnelData={funnelData}
+        onSave={(data) => {
+          setFunnelData(data);
+          toast.success('Funnel saved successfully!');
+        }}
+        onBack={() => setShowVisualEditor(false)}
+      />
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -716,6 +758,14 @@ export default function AdvancedFunnelBuilder({ onComplete, onBack }: {
             <Button variant="outline" onClick={() => setIsPreviewMode(!isPreviewMode)}>
               <Eye className="w-4 h-4 mr-2" />
               {isPreviewMode ? 'Edit' : 'Preview'}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowVisualEditor(true)}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 text-white border-0 hover:from-purple-700 hover:to-blue-700"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              AI Visual Editor
             </Button>
             <Button variant="outline" onClick={handleSaveFunnel}>
               <Save className="w-4 h-4 mr-2" />
