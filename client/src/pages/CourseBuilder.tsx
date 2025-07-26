@@ -60,7 +60,7 @@ import {
   Smartphone,
   Tablet
 } from 'lucide-react';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 // Enhanced Types
 interface Lesson {
@@ -977,6 +977,13 @@ export default function CourseBuilder() {
   const [salesPagePreviewOpen, setSalesPagePreviewOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('content');
 
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    
+    // Handle drag and drop logic here
+    console.log('Drag ended:', result);
+  };
+
   const openContentEditor = (lesson: Lesson) => {
     setEditingLesson(lesson);
     setContentEditorOpen(true);
@@ -1070,7 +1077,7 @@ export default function CourseBuilder() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center gap-4">
-              <Button variant="outline" onClick={() => window.location.href = '/lms'}>
+              <Button variant="outline" onClick={() => window.close()}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to LMS
               </Button>

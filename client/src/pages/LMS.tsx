@@ -633,7 +633,7 @@ export default function LMS() {
                     <CardTitle>Your Courses</CardTitle>
                     <CardDescription>Manage and monitor your course performance</CardDescription>
                   </div>
-                  <Button onClick={() => window.location.href = '/course-builder'}>
+                  <Button onClick={() => window.open('/course-builder', '_blank')}>
                     <Plus className="w-4 h-4 mr-2" />
                     Create Course
                   </Button>
@@ -658,7 +658,7 @@ export default function LMS() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={() => window.location.href = '/course-builder'}>
+                        <Button variant="outline" size="sm" onClick={() => window.open('/course-builder', '_blank')}>
                           <Edit className="w-4 h-4 mr-2" />
                           Edit
                         </Button>
