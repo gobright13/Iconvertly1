@@ -476,223 +476,19 @@ const MembershipDashboard = () => {
     </div>
   );
 
-  // Payments Tab Content
-  const PaymentsContent = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Payment Management</h2>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Coupon
-          </Button>
+  // Other tab contents would be added here...
+  const PaymentsContent = () => <div>Payments Content</div>;
+  const CommunityContent = () => <div>Community Content</div>;
+  const AnalyticsContent = () => <div>Analytics Content</div>;
+  const SettingsContent = () => <div>Settings Content</div>;
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Membership Dashboard</h1>
+          <p className="text-muted-foreground">Manage your membership site and courses</p>
         </div>
-      </div>
-
-      {/* Revenue Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-bold">$127,420</p>
-              </div>
-              <DollarSign className="h-8 w-8 text-green-500" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">+12% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Active Subscriptions</p>
-                <p className="text-2xl font-bold">1,089</p>
-              </div>
-              <RefreshCw className="h-8 w-8 text-blue-500" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">+8% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Failed Payments</p>
-                <p className="text-2xl font-bold">23</p>
-              </div>
-              <XCircle className="h-8 w-8 text-red-500" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">-5% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Churn Rate</p>
-                <p className="text-2xl font-bold">3.2%</p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-orange-500" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">-1.2% from last month</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Payment Methods */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment Methods</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="border rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <CreditCard className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Stripe</p>
-                    <p className="text-sm text-muted-foreground">Credit cards, digital wallets</p>
-                  </div>
-                </div>
-                <Badge variant="default">Active</Badge>
-              </div>
-            </div>
-            <div className="border rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <DollarSign className="h-5 w-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium">PayPal</p>
-                    <p className="text-sm text-muted-foreground">PayPal payments</p>
-                  </div>
-                </div>
-                <Badge variant="secondary">Inactive</Badge>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Transactions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Transactions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Customer</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {[
-                { customer: "John Smith", plan: "Pro Monthly", amount: "$79", status: "Success", date: "2024-01-15" },
-                { customer: "Sarah Johnson", plan: "Basic Monthly", amount: "$29", status: "Success", date: "2024-01-15" },
-                { customer: "Mike Wilson", plan: "Enterprise", amount: "$199", status: "Failed", date: "2024-01-14" },
-                { customer: "Emma Davis", plan: "Pro Monthly", amount: "$79", status: "Success", date: "2024-01-14" },
-              ].map((transaction, index) => (
-                <TableRow key={index}>
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>{transaction.customer.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{transaction.customer}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{transaction.plan}</TableCell>
-                  <TableCell className="font-medium">{transaction.amount}</TableCell>
-                  <TableCell>
-                    <Badge variant={transaction.status === "Success" ? "default" : "destructive"}>
-                      {transaction.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{transaction.date}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Coupons & Discounts */}
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Coupons & Discounts</CardTitle>
-            <Button variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Coupon
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[
-              { code: "WELCOME50", discount: "50% off", usage: "123/500", expires: "Mar 31, 2024", status: "Active" },
-              { code: "STUDENT20", discount: "20% off", usage: "45/100", expires: "Dec 31, 2024", status: "Active" },
-              { code: "BLACKFRIDAY", discount: "70% off", usage: "234/1000", expires: "Nov 30, 2023", status: "Expired" },
-            ].map((coupon, index) => (
-              <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <div className="w-2 h-2 bg-green-500 rounded-full" />
-                  <div>
-                    <p className="font-medium">{coupon.code}</p>
-                    <p className="text-sm text-muted-foreground">{coupon.discount} discount</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="text-right">
-                    <p className="text-sm font-medium">Used: {coupon.usage}</p>
-                    <p className="text-sm text-muted-foreground">Expires: {coupon.expires}</p>
-                  </div>
-                  <Badge variant={coupon.status === "Active" ? "default" : "secondary"}>
-                    {coupon.status}
-                  </Badge>
-                  <div className="flex space-x-1">
-                    <Button variant="ghost" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  // Community Tab Content
-  const CommunityContent = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Community Management</h2>
         <div className="flex gap-2">
           <Button variant="outline">
             <Settings className="h-4 w-4 mr-2" />
@@ -700,96 +496,81 @@ const MembershipDashboard = () => {
           </Button>
           <Button>
             <Plus className="h-4 w-4 mr-2" />
-            New Forum
+            New Course
           </Button>
         </div>
       </div>
 
-      {/* Community Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Active Members</p>
-                <p className="text-2xl font-bold">892</p>
-              </div>
-              <Users className="h-8 w-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Posts</p>
-                <p className="text-2xl font-bold">2,341</p>
-              </div>
-              <MessageSquare className="h-8 w-8 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Daily Engagement</p>
-                <p className="text-2xl font-bold">67%</p>
-              </div>
-              <Heart className="h-8 w-8 text-red-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Moderators</p>
-                <p className="text-2xl font-bold">12</p>
-              </div>
-              <Shield className="h-8 w-8 text-purple-500" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-8">
+          <TabsTrigger value="dashboard" className="flex items-center space-x-2">
+            <BarChart3 className="h-4 w-4" />
+            <span>Dashboard</span>
+          </TabsTrigger>
+          <TabsTrigger value="courses" className="flex items-center space-x-2">
+            <BookOpen className="h-4 w-4" />
+            <span>Courses</span>
+          </TabsTrigger>
+          <TabsTrigger value="access-control" className="flex items-center space-x-2">
+            <Shield className="h-4 w-4" />
+            <span>Access Control</span>
+          </TabsTrigger>
+          <TabsTrigger value="course-builder" className="flex items-center space-x-2">
+            <Plus className="h-4 w-4" />
+            <span>Course Builder</span>
+          </TabsTrigger>
+          <TabsTrigger value="payments" className="flex items-center space-x-2">
+            <DollarSign className="h-4 w-4" />
+            <span>Payments</span>
+          </TabsTrigger>
+          <TabsTrigger value="community" className="flex items-center space-x-2">
+            <MessageSquare className="h-4 w-4" />
+            <span>Community</span>
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center space-x-2">
+            <TrendingUp className="h-4 w-4" />
+            <span>Analytics</span>
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center space-x-2">
+            <Settings className="h-4 w-4" />
+            <span>Settings</span>
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Forums */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Discussion Forums</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[
-              { name: "General Discussion", posts: 324, members: 567, activity: "2 min ago", color: "bg-blue-100 text-blue-600" },
-              { name: "Course Q&A", posts: 189, members: 423, activity: "5 min ago", color: "bg-green-100 text-green-600" },
-              { name: "Project Showcase", posts: 156, members: 234, activity: "12 min ago", color: "bg-purple-100 text-purple-600" },
-              { name: "Career Advice", posts: 98, members: 345, activity: "1 hour ago", color: "bg-orange-100 text-orange-600" },
-            ].map((forum, index) => (
-              <div key={index} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                <div className="flex items-center space-x-4">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${forum.color}`}>
-                    <MessageSquare className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-medium">{forum.name}</p>
-                    <p className="text-sm text-muted-foreground">{forum.posts} posts • {forum.members} members</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Last activity</p>
-                  <p className="text-sm font-medium">{forum.activity}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+        <TabsContent value="dashboard">
+          <DashboardContent />
+        </TabsContent>
 
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <
+        <TabsContent value="courses">
+          <CoursesContent />
+        </TabsContent>
+
+        <TabsContent value="access-control">
+          <AccessControlContent />
+        </TabsContent>
+
+        <TabsContent value="course-builder">
+          <CourseBuilderContent />
+        </TabsContent>
+
+        <TabsContent value="payments">
+          <PaymentsContent />
+        </TabsContent>
+
+        <TabsContent value="community">
+          <CommunityContent />
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          <AnalyticsContent />
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <SettingsContent />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default MembershipDashboard;
