@@ -1,5 +1,4 @@
-
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -160,11 +159,11 @@ const AIWritingPad: React.FC<{
     if (!prompt.trim()) return;
 
     setIsGenerating(true);
-    
+
     // Simulate AI content generation based on type
     setTimeout(() => {
       let content = '';
-      
+
       switch (contentType) {
         case 'outline':
           content = `# Course Outline: ${prompt}
@@ -193,7 +192,7 @@ const AIWritingPad: React.FC<{
 - Optimization techniques
 - Final assessment`;
           break;
-          
+
         case 'lesson':
           content = `# ${prompt}
 
@@ -226,7 +225,7 @@ In this lesson, we covered the essential elements of ${prompt}. The key takeaway
 ## Next Steps
 Continue to the next lesson where we'll build upon these concepts...`;
           break;
-          
+
         case 'module':
           content = `# Module: ${prompt}
 
@@ -255,7 +254,7 @@ Professional strategies and optimization
 ## Assessment
 This module includes quizzes, practical exercises, and a final project to ensure mastery of the material.`;
           break;
-          
+
         case 'description':
           content = `Transform your skills with this comprehensive course on ${prompt}. 
 
@@ -468,7 +467,7 @@ const AdvancedContentEditor: React.FC<{
             </div>
           </div>
         );
-      
+
       case 'audio':
         return (
           <div className="space-y-4">
@@ -491,7 +490,7 @@ const AdvancedContentEditor: React.FC<{
             </div>
           </div>
         );
-      
+
       case 'download':
         return (
           <div className="space-y-4">
@@ -513,7 +512,7 @@ const AdvancedContentEditor: React.FC<{
             </div>
           </div>
         );
-      
+
       case 'link':
         return (
           <div>
@@ -525,7 +524,7 @@ const AdvancedContentEditor: React.FC<{
             />
           </div>
         );
-      
+
       case 'html':
         return (
           <div className="space-y-4">
@@ -549,7 +548,7 @@ const AdvancedContentEditor: React.FC<{
             </div>
           </div>
         );
-      
+
       default:
         return null;
     }
@@ -590,7 +589,7 @@ const AdvancedContentEditor: React.FC<{
                   placeholder="Enter lesson title"
                 />
               </div>
-              
+
               <div>
                 <Label>Lesson Type</Label>
                 <Select
@@ -738,6 +737,76 @@ export default function CourseBuilder() {
 
   const [modules, setModules] = useState<Module[]>([]);
 
+  const [courses, setCourses] = useState([
+    {
+      id: 1,
+      title: 'Complete Digital Marketing Mastery',
+      description: 'Learn all aspects of digital marketing from basics to advanced strategies',
+      status: 'published',
+      students: 342,
+      modules: 8,
+      lastUpdate: '2 days ago',
+      progress: 100,
+      price: 297,
+      enrollmentLimit: 500,
+      currentEnrollments: 342,
+      isLocked: false
+    },
+    {
+      id: 2,
+      title: 'AI-Powered Lead Generation',
+      description: 'Use AI tools to generate high-quality leads automatically',
+      status: 'draft',
+      students: 0,
+      modules: 6,
+      lastUpdate: '1 week ago',
+      progress: 60,
+      price: 197,
+      enrollmentLimit: 300,
+      currentEnrollments: 0,
+      isLocked: true
+    },
+    {
+      id: 3,
+      title: 'Advanced Sales Funnel Strategies',
+      description: 'Build high-converting sales funnels that scale your business',
+      status: 'draft',
+      students: 0,
+      modules: 10,
+      lastUpdate: '3 days ago',
+      progress: 30,
+      price: 397,
+      enrollmentLimit: 200,
+      currentEnrollments: 0,
+      isLocked: false
+    }
+  ]);
+
+  // Load draft courses from localStorage
+  useEffect(() => {
+    const draftCourses = JSON.parse(localStorage.getItem('draftCourses') || '[]');
+    const convertedDrafts = draftCourses.map((course: any) => ({
+      id: parseInt(course.id) || Math.random(),
+      title: course.title,
+      description: course.description,
+      status: course.status || 'draft',
+      students: course.currentEnrollments || 0,
+      modules: course.modules?.length || 0,
+      lastUpdate: new Date(course.lastModified).toLocaleDateString(),
+      progress: course.isPublished ? 100 : Math.floor(Math.random() * 80) + 10,
+      price: course.price,
+      enrollmentLimit: course.enrollmentLimit,
+      currentEnrollments: course.currentEnrollments || 0,
+      isLocked: false
+    }));
+
+    setCourses(prev => {
+      const existingIds = prev.map(c => c.id);
+      const newDrafts = convertedDrafts.filter((draft: any) => !existingIds.includes(draft.id));
+      return [...prev, ...newDrafts];
+    });
+  }, []);
+
   // Step navigation functions
   const nextStep = () => {
     if (currentStep === 1) {
@@ -761,7 +830,7 @@ export default function CourseBuilder() {
     }
 
     setIsGeneratingCourse(true);
-    
+
     // Simulate AI course generation
     setTimeout(() => {
       const generatedModules: Module[] = [
@@ -966,17 +1035,17 @@ export default function CourseBuilder() {
     if (!result.destination) return;
 
     const { source, destination, type } = result;
-    
+
     if (type === 'modules') {
       const newModules = Array.from(modules);
       const [reorderedModule] = newModules.splice(source.index, 1);
       newModules.splice(destination.index, 0, reorderedModule);
-      
+
       const updatedModules = newModules.map((module, index) => ({
         ...module,
         order: index + 1
       }));
-      
+
       setModules(updatedModules);
       toast.success("Module order updated");
     }
@@ -1472,7 +1541,7 @@ export default function CourseBuilder() {
                           </SelectContent>
                         </Select>
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <div>
                           <Label>Enrollment Open</Label>
@@ -1483,7 +1552,7 @@ export default function CourseBuilder() {
                           onCheckedChange={(checked) => setCourse({...course, enrollmentOpen: checked})}
                         />
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <div>
                           <Label>Schedule</Label>
@@ -1626,7 +1695,7 @@ function ModuleItem({
                   <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-200 rounded">
                     <GripVertical className="h-4 w-4 text-gray-400" />
                   </div>
-                  
+
                   <Button
                     variant="ghost"
                     size="sm"

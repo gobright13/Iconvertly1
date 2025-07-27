@@ -76,7 +76,7 @@ import {
   Monitor,
   Tablet,
   Save
-} from 'lucide-react';
+} from 'lucide-react';</old_str>
 
 // Interfaces
 interface Course {
@@ -980,15 +980,15 @@ const MembershipDashboard: React.FC = () => {
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Community Forum</h2>
               <div className="flex gap-2">
-                <Button variant="outline">
+                <Button variant="outline" onClick={() => toast.success('Forum settings opened!')}>
                   <Settings className="h-4 w-4 mr-2" />
                   Forum Settings
                 </Button>
-                <Button>
+                <Button onClick={() => toast.success('Create category dialog opened!')}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Category
                 </Button>
-              </div>
+              </div></old_str>
             </div>
 
             {/* Forum Stats */}
@@ -1042,27 +1042,33 @@ const MembershipDashboard: React.FC = () => {
                   <p className="text-muted-foreground">Organize discussions by topics</p>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {['General Discussion', 'Technical Support', 'Course Q&A', 'Feature Requests', 'Success Stories'].map((category, index) => (
+                  {[
+                    { name: 'General Discussion', posts: 28 },
+                    { name: 'Technical Support', posts: 14 },
+                    { name: 'Course Q&A', posts: 38 },
+                    { name: 'Feature Requests', posts: 15 },
+                    { name: 'Success Stories', posts: 22 }
+                  ].map((category, index) => (
                     <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
                         <MessageCircle className="h-4 w-4" />
                         <div>
-                          <p className="font-medium">{category}</p>
-                          <p className="text-sm text-muted-foreground">{Math.floor(Math.random() * 50) + 10} posts</p>
+                          <p className="font-medium">{category.name}</p>
+                          <p className="text-sm text-muted-foreground">{category.posts} posts</p>
                         </div>
                       </div>
                       <div className="flex gap-1">
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => toast.success(`Editing ${category.name}`)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => toast.success(`Settings for ${category.name}`)}>
                           <Settings className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
                   ))}
                 </CardContent>
-              </Card>
+              </Card></old_str>
 
               <Card>
                 <CardHeader>
