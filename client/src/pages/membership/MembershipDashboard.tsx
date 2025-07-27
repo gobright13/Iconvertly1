@@ -1,301 +1,389 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { 
-  Users, 
-  BookOpen, 
-  Video, 
-  MessageCircle, 
-  Calendar,
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { toast } from 'sonner';
+import {
+  BookOpen,
+  Users,
+  DollarSign,
   TrendingUp,
-  Award,
-  Star,
   Play,
-  Download,
-  FileText,
-  Headphones,
-  Clock,
-  CheckCircle,
-  Plus,
   Edit,
   Trash2,
+  Plus,
+  Settings,
+  BarChart3,
+  MessageCircle,
+  CreditCard,
+  Bell,
+  Crown,
+  Star,
+  Award,
+  Clock,
+  Target,
+  Download,
+  Upload,
   Eye,
-  DollarSign,
   Lock,
   Unlock,
-  GripVertical,
-  Settings,
-  Upload,
-  Save,
-  Bot,
-  Sparkles,
-  ChevronDown,
-  ChevronRight,
-  HelpCircle,
-  ExternalLink,
-  Globe,
-  Share2,
-  Copy,
-  Mail,
-  Shield,
-  CreditCard,
-  Target,
-  BarChart3,
-  Trophy,
-  Zap,
-  Crown,
-  Gift,
-  UserCheck,
-  Bell,
-  Heart,
-  Bookmark,
-  Filter,
   Search,
-  Archive,
+  Filter,
+  Calendar,
+  Mail,
+  Phone,
+  Globe,
+  Shield,
+  Zap,
+  Palette,
+  Database,
+  Webhook,
   Code,
+  FileText,
+  Video,
   Image,
-  Mic,
-  PenTool,
+  Music,
+  Link,
+  Share2,
+  Heart,
+  ThumbsUp,
+  MessageSquare,
+  Flag,
+  Trash,
+  MoreHorizontal,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Info,
+  RefreshCw,
+  ArrowUpRight,
+  ArrowDownRight,
+  PieChart,
+  Activity,
   Layers,
-  Monitor,
+  MousePointer,
   Smartphone,
+  Monitor,
   Tablet,
-  Flag
-} from "lucide-react";
+  Save
+} from 'lucide-react';
 
-// Enhanced Types for Comprehensive Membership + LMS
+// Interfaces
 interface Course {
   id: string;
   title: string;
   description: string;
   thumbnail: string;
   price: number;
-  enrolledStudents: number;
-  maxStudents: number;
-  isPublished: boolean;
-  author: string;
-  category: string;
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  estimatedDuration: string;
+  students: number;
   rating: number;
-  tags: string[];
-  modules: Module[];
-  requiredAccessLevel: number;
+  duration: string;
+  modules: number;
+  status: 'draft' | 'published' | 'archived';
+  category: string;
+  lastUpdated: string;
+  completionRate: number;
+  revenue: number;
 }
 
-interface Module {
+interface Student {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
+  joinDate: string;
+  coursesEnrolled: number;
+  completionRate: number;
+  totalSpent: number;
+  status: 'active' | 'inactive' | 'suspended';
+  lastActivity: string;
+}
+
+interface PaymentTransaction {
+  id: string;
+  studentName: string;
+  courseName: string;
+  amount: number;
+  date: string;
+  status: 'completed' | 'pending' | 'failed' | 'refunded';
+  paymentMethod: string;
+  transactionId: string;
+}
+
+interface ForumPost {
   id: string;
   title: string;
-  description: string;
-  lessons: Lesson[];
-  isExpanded: boolean;
-  order: number;
-  dripSettings?: {
-    unlockAfterDays?: number;
-    unlockAfterCompletion?: string;
-    unlockDate?: string;
+  author: string;
+  course: string;
+  replies: number;
+  views: number;
+  lastActivity: string;
+  status: 'active' | 'locked' | 'pinned';
+  category: string;
+}
+
+interface AnalyticsData {
+  totalStudents: number;
+  totalRevenue: number;
+  courseCompletions: number;
+  averageRating: number;
+  monthlyGrowth: {
+    students: number;
+    revenue: number;
+    completions: number;
   };
-}
-
-interface Lesson {
-  id: string;
-  title: string;
-  type: 'video' | 'text' | 'quiz' | 'assignment' | 'download' | 'live';
-  content: string;
-  duration: number;
-  isLocked: boolean;
-  videoUrl?: string;
-  description: string;
-  order: number;
-  attachments?: string[];
+  topCourses: Array<{
+    name: string;
+    students: number;
+    revenue: number;
+    rating: number;
+  }>;
+  revenueChart: Array<{
+    month: string;
+    revenue: number;
+    students: number;
+  }>;
 }
 
 interface MembershipTier {
   id: string;
   name: string;
+  description: string;
   price: number;
-  billingPeriod: 'monthly' | 'yearly' | 'lifetime';
-  accessLevel: number;
   features: string[];
-  color: string;
+  maxCourses: number;
+  maxStudents: number;
+  support: string;
+  isPopular: boolean;
 }
 
-interface MembershipStats {
-  activeMembership: {
-    id: number;
-    planName: string;
-    status: string;
-    accessLevel: number;
-    nextBilling: string;
-  } | null;
-  contentProgress: {
-    totalItems: number;
-    completedItems: number;
-    progressPercentage: number;
-  };
-  communityActivity: {
-    postsCount: number;
-    repliesCount: number;
-    likesReceived: number;
-  };
-  upcomingEvents: number;
-}
+const MembershipDashboard: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [loading, setLoading] = useState(false);
 
-interface ContentItem {
-  id: number;
-  title: string;
-  contentType: 'video' | 'pdf' | 'audio' | 'text' | 'download';
-  thumbnailUrl?: string;
-  duration?: number;
-  isCompleted: boolean;
-  progressPercentage: number;
-  requiredAccessLevel: number;
-}
-
-export default function MembershipDashboard() {
-  const navigate = useNavigate();
-  const [selectedTab, setSelectedTab] = useState("dashboard");
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [isCreatingCourse, setIsCreatingCourse] = useState(false);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [modules, setModules] = useState<Module[]>([]);
-
-  // Sample data for demonstration
-  const membershipTiers: MembershipTier[] = [
+  // Sample data
+  const [courses] = useState<Course[]>([
     {
       id: '1',
-      name: 'Silver Member',
-      price: 29,
-      billingPeriod: 'monthly',
-      accessLevel: 1,
-      features: ['Basic Courses', 'Community Access', 'Email Support'],
-      color: 'bg-gradient-to-r from-gray-400 to-gray-600'
+      title: 'Complete Web Development Course',
+      description: 'Learn HTML, CSS, JavaScript, React, and Node.js',
+      thumbnail: '/api/placeholder/300/200',
+      price: 199,
+      students: 1250,
+      rating: 4.8,
+      duration: '40 hours',
+      modules: 12,
+      status: 'published',
+      category: 'Technology',
+      lastUpdated: '2024-01-15',
+      completionRate: 78,
+      revenue: 248750
     },
     {
-      id: '2', 
-      name: 'Gold Member',
-      price: 59,
-      billingPeriod: 'monthly',
-      accessLevel: 2,
-      features: ['All Courses', 'Live Sessions', 'Priority Support', 'Certificates'],
-      color: 'bg-gradient-to-r from-yellow-400 to-yellow-600'
+      id: '2',
+      title: 'Digital Marketing Mastery',
+      description: 'Master SEO, Social Media, PPC, and Content Marketing',
+      thumbnail: '/api/placeholder/300/200',
+      price: 149,
+      students: 890,
+      rating: 4.6,
+      duration: '25 hours',
+      modules: 8,
+      status: 'published',
+      category: 'Marketing',
+      lastUpdated: '2024-01-10',
+      completionRate: 82,
+      revenue: 132610
+    }
+  ]);
+
+  const [students] = useState<Student[]>([
+    {
+      id: '1',
+      name: 'John Smith',
+      email: 'john@example.com',
+      avatar: '/api/placeholder/40/40',
+      joinDate: '2024-01-01',
+      coursesEnrolled: 3,
+      completionRate: 85,
+      totalSpent: 547,
+      status: 'active',
+      lastActivity: '2024-01-20'
+    },
+    {
+      id: '2',
+      name: 'Sarah Johnson',
+      email: 'sarah@example.com',
+      avatar: '/api/placeholder/40/40',
+      joinDate: '2024-01-05',
+      coursesEnrolled: 2,
+      completionRate: 92,
+      totalSpent: 348,
+      status: 'active',
+      lastActivity: '2024-01-19'
+    }
+  ]);
+
+  const [payments] = useState<PaymentTransaction[]>([
+    {
+      id: '1',
+      studentName: 'John Smith',
+      courseName: 'Complete Web Development Course',
+      amount: 199,
+      date: '2024-01-20',
+      status: 'completed',
+      paymentMethod: 'Credit Card',
+      transactionId: 'TXN123456789'
+    },
+    {
+      id: '2',
+      studentName: 'Sarah Johnson',
+      courseName: 'Digital Marketing Mastery',
+      amount: 149,
+      date: '2024-01-19',
+      status: 'completed',
+      paymentMethod: 'PayPal',
+      transactionId: 'TXN987654321'
+    }
+  ]);
+
+  const [forumPosts] = useState<ForumPost[]>([
+    {
+      id: '1',
+      title: 'React Hooks Best Practices',
+      author: 'John Smith',
+      course: 'Complete Web Development Course',
+      replies: 12,
+      views: 234,
+      lastActivity: '2024-01-20',
+      status: 'active',
+      category: 'Technical Discussion'
+    },
+    {
+      id: '2',
+      title: 'SEO Strategy Questions',
+      author: 'Sarah Johnson',
+      course: 'Digital Marketing Mastery',
+      replies: 8,
+      views: 156,
+      lastActivity: '2024-01-19',
+      status: 'active',
+      category: 'Q&A'
+    }
+  ]);
+
+  const [analytics] = useState<AnalyticsData>({
+    totalStudents: 2140,
+    totalRevenue: 381360,
+    courseCompletions: 1687,
+    averageRating: 4.7,
+    monthlyGrowth: {
+      students: 12.5,
+      revenue: 18.3,
+      completions: 15.7
+    },
+    topCourses: [
+      { name: 'Complete Web Development Course', students: 1250, revenue: 248750, rating: 4.8 },
+      { name: 'Digital Marketing Mastery', students: 890, revenue: 132610, rating: 4.6 }
+    ],
+    revenueChart: [
+      { month: 'Jan', revenue: 28000, students: 180 },
+      { month: 'Feb', revenue: 32000, students: 220 },
+      { month: 'Mar', revenue: 35000, students: 250 },
+      { month: 'Apr', revenue: 38000, students: 280 },
+      { month: 'May', revenue: 42000, students: 310 },
+      { month: 'Jun', revenue: 45000, students: 340 }
+    ]
+  });
+
+  const [membershipTiers] = useState<MembershipTier[]>([
+    {
+      id: '1',
+      name: 'Basic',
+      description: 'Perfect for beginners',
+      price: 29,
+      features: ['Access to 5 courses', 'Basic support', 'Mobile app access'],
+      maxCourses: 5,
+      maxStudents: 100,
+      support: 'Email',
+      isPopular: false
+    },
+    {
+      id: '2',
+      name: 'Pro',
+      description: 'For serious learners',
+      price: 79,
+      features: ['Access to all courses', 'Priority support', 'Certificates', 'Download materials'],
+      maxCourses: 0,
+      maxStudents: 1000,
+      support: 'Priority Email + Chat',
+      isPopular: true
     },
     {
       id: '3',
-      name: 'VIP Member',
-      price: 99,
-      billingPeriod: 'monthly', 
-      accessLevel: 3,
-      features: ['Everything', '1-on-1 Coaching', 'Custom Content', 'White Glove Support'],
-      color: 'bg-gradient-to-r from-purple-500 to-purple-700'
+      name: 'Enterprise',
+      description: 'For teams and organizations',
+      price: 199,
+      features: ['Everything in Pro', 'Team management', 'Custom branding', 'Analytics dashboard'],
+      maxCourses: 0,
+      maxStudents: 0,
+      support: '24/7 Phone + Chat',
+      isPopular: false
     }
-  ];
+  ]);
 
-  const { data: membershipStats } = useQuery<MembershipStats>({
-    queryKey: ["/api/membership/stats"],
-  });
-
-  const { data: recentContent } = useQuery<ContentItem[]>({
-    queryKey: ["/api/member-content/recent"],
-  });
-
-  const { data: inProgressContent } = useQuery<ContentItem[]>({
-    queryKey: ["/api/member-content/in-progress"],
-  });
-
-  const getContentIcon = (type: string) => {
-    switch (type) {
-      case 'video': return <Play className="h-4 w-4" />;
-      case 'pdf': return <FileText className="h-4 w-4" />;
-      case 'audio': return <Headphones className="h-4 w-4" />;
-      case 'download': return <Download className="h-4 w-4" />;
-      case 'quiz': return <HelpCircle className="h-4 w-4" />;
-      case 'assignment': return <Edit className="h-4 w-4" />;
-      case 'live': return <Video className="h-4 w-4" />;
-      default: return <BookOpen className="h-4 w-4" />;
-    }
+  const handleCourseAction = (action: string, courseId: string) => {
+    setLoading(true);
+    setTimeout(() => {
+      toast.success(`Course ${action} successfully!`);
+      setLoading(false);
+    }, 1000);
   };
 
-  const formatDuration = (seconds?: number) => {
-    if (!seconds) return '';
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+  const handleStudentAction = (action: string, studentId: string) => {
+    setLoading(true);
+    setTimeout(() => {
+      toast.success(`Student ${action} successfully!`);
+      setLoading(false);
+    }, 1000);
   };
 
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
-
-    const { source, destination, type } = result;
-    
-    if (type === 'modules') {
-      const newModules = Array.from(modules);
-      const [reorderedModule] = newModules.splice(source.index, 1);
-      newModules.splice(destination.index, 0, reorderedModule);
-      
-      // Update order numbers
-      const updatedModules = newModules.map((module, index) => ({
-        ...module,
-        order: index + 1
-      }));
-      
-      setModules(updatedModules);
-      toast.success("Module order updated");
-    } else if (type === 'lessons') {
-      // Handle lesson reordering within modules
-      const moduleId = source.droppableId.replace('module-', '');
-      const moduleIndex = modules.findIndex(m => m.id === moduleId);
-      
-      if (moduleIndex !== -1) {
-        const newModules = [...modules];
-        const lessons = [...newModules[moduleIndex].lessons];
-        const [reorderedLesson] = lessons.splice(source.index, 1);
-        lessons.splice(destination.index, 0, reorderedLesson);
-        
-        // Update lesson order numbers
-        const updatedLessons = lessons.map((lesson, index) => ({
-          ...lesson,
-          order: index + 1
-        }));
-        
-        newModules[moduleIndex].lessons = updatedLessons;
-        setModules(newModules);
-        toast.success("Lesson order updated");
-      }
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'published': case 'completed': case 'active': return 'bg-green-100 text-green-800';
+      case 'draft': case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'archived': case 'failed': case 'inactive': return 'bg-red-100 text-red-800';
+      case 'suspended': return 'bg-orange-100 text-orange-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950 p-6">
-      <div className="mx-auto max-w-7xl space-y-8">
-        
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Membership Site & Learning Management System
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Membership Dashboard
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Complete membership portal with advanced course management, community access, and payment control
+          <p className="text-gray-600 dark:text-gray-400">
+            Manage your courses, students, and membership platform
           </p>
         </div>
 
-        {/* Main Navigation Tabs */}
-        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-          <TabsList className="grid grid-cols-8 w-full bg-white dark:bg-gray-800 p-1 rounded-lg shadow-lg">
+        {/* Navigation Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-8 lg:w-fit">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Dashboard
@@ -304,13 +392,13 @@ export default function MembershipDashboard() {
               <BookOpen className="h-4 w-4" />
               Courses
             </TabsTrigger>
-            <TabsTrigger value="builder" className="flex items-center gap-2">
-              <Edit className="h-4 w-4" />
-              Course Builder
-            </TabsTrigger>
-            <TabsTrigger value="access" className="flex items-center gap-2">
+            <TabsTrigger value="access-control" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Access Control
+            </TabsTrigger>
+            <TabsTrigger value="course-builder" className="flex items-center gap-2">
+              <Edit className="h-4 w-4" />
+              Course Builder
             </TabsTrigger>
             <TabsTrigger value="payments" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
@@ -330,158 +418,220 @@ export default function MembershipDashboard() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Member Dashboard */}
+          {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
-              {/* Welcome Card */}
-              <Card className="lg:col-span-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Crown className="h-6 w-6" />
-                    Welcome Back, Member!
-                  </CardTitle>
-                  <p className="text-blue-100">
-                    Continue your learning journey and unlock your potential
-                  </p>
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <div className="text-2xl font-bold">12</div>
-                      <div className="text-sm text-blue-100">Courses Enrolled</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold">67%</div>
-                      <div className="text-sm text-blue-100">Average Progress</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold">8</div>
-                      <div className="text-sm text-blue-100">Certificates Earned</div>
-                    </div>
-                  </div>
+                  <div className="text-2xl font-bold">{analytics.totalStudents.toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="text-green-600">+{analytics.monthlyGrowth.students}%</span> from last month
+                  </p>
                 </CardContent>
               </Card>
 
-              {/* Quick Actions */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-yellow-500" />
-                    Quick Actions
-                  </CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button variant="outline" className="w-full justify-start" onClick={() => setSelectedTab("courses")}>
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    Browse Courses
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start" onClick={() => setSelectedTab("community")}>
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Join Community
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Live Sessions
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Trophy className="h-4 w-4 mr-2" />
-                    View Certificates
-                  </Button>
+                <CardContent>
+                  <div className="text-2xl font-bold">${analytics.totalRevenue.toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="text-green-600">+{analytics.monthlyGrowth.revenue}%</span> from last month
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Course Completions</CardTitle>
+                  <Award className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{analytics.courseCompletions.toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="text-green-600">+{analytics.monthlyGrowth.completions}%</span> from last month
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
+                  <Star className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{analytics.averageRating}</div>
+                  <div className="flex items-center">
+                    {Array.from({ length: 5 }, (_, i) => (
+                      <Star key={i} className={`h-3 w-3 ${i < Math.floor(analytics.averageRating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Progress Overview */}
+            {/* Welcome Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Crown className="h-5 w-5 text-yellow-500" />
+                  Welcome to Your Membership Dashboard
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">
+                  Manage your online courses, track student progress, and grow your educational business.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={() => setActiveTab('course-builder')}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create New Course
+                  </Button>
+                  <Button variant="outline" onClick={() => setActiveTab('analytics')}>
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    View Analytics
+                  </Button>
+                  <Button variant="outline" onClick={() => setActiveTab('community')}>
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Community Forum
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Activity & Top Courses */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Continue Learning</CardTitle>
-                  <p className="text-sm text-muted-foreground">Pick up where you left off</p>
+                  <CardTitle>Top Performing Courses</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {[1, 2, 3].map((item) => (
-                    <div key={item} className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                        <Play className="h-6 w-6 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium">Advanced Marketing Strategy</h4>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <Progress value={65} className="flex-1" />
-                          <span className="text-sm text-muted-foreground">65%</span>
+                <CardContent>
+                  <div className="space-y-4">
+                    {analytics.topCourses.map((course, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium">{course.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {course.students} students • ${course.revenue.toLocaleString()} revenue
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                          <span className="text-sm font-medium">{course.rating}</span>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Upcoming Events</CardTitle>
-                  <p className="text-sm text-muted-foreground">Don't miss these live sessions</p>
+                  <CardTitle>Recent Enrollments</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {[1, 2, 3].map((item) => (
-                    <div key={item} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <div>
-                          <h4 className="font-medium">Marketing Masterclass</h4>
-                          <p className="text-sm text-muted-foreground">Today, 3:00 PM</p>
+                <CardContent>
+                  <div className="space-y-4">
+                    {students.slice(0, 3).map((student) => (
+                      <div key={student.id} className="flex items-center gap-3">
+                        <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Users className="h-5 w-5 text-blue-600" />
                         </div>
+                        <div className="flex-1">
+                          <p className="font-medium">{student.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Joined {student.joinDate} • {student.coursesEnrolled} courses
+                          </p>
+                        </div>
+                        <Badge className={getStatusColor(student.status)}>
+                          {student.status}
+                        </Badge>
                       </div>
-                      <Button size="sm" variant="outline">Join</Button>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
 
-          {/* Courses Section - LMS Integration */}
+          {/* Courses Tab */}
           <TabsContent value="courses" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">Course Library</h2>
-                <p className="text-muted-foreground">Browse and enroll in available courses</p>
-              </div>
-              <Button onClick={() => setSelectedTab("builder")} className="bg-blue-500 hover:bg-blue-600">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Course Management</h2>
+              <Button onClick={() => setActiveTab('course-builder')}>
                 <Plus className="h-4 w-4 mr-2" />
-                Create Course
+                Create New Course
               </Button>
             </div>
 
-            {/* Course Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((course) => (
-                <Card key={course} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="aspect-video bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
-                    <Play className="h-12 w-12 text-white" />
-                  </div>
+              {courses.map((course) => (
+                <Card key={course.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <Badge variant="secondary">Marketing</Badge>
-                      <div className="flex items-center space-x-1">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm">4.8</span>
-                      </div>
+                    <div className="aspect-video bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
+                      <Video className="h-8 w-8 text-gray-400" />
                     </div>
-                    <CardTitle className="line-clamp-2">Complete Digital Marketing Mastery</CardTitle>
+                    <CardTitle className="line-clamp-2">{course.title}</CardTitle>
                     <p className="text-sm text-muted-foreground line-clamp-2">
-                      Learn everything about digital marketing from SEO to social media advertising.
+                      {course.description}
                     </p>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-                      <span>8 weeks</span>
-                      <span>234 students</span>
-                      <span>Advanced</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold">$197</span>
-                      <Button size="sm">Enroll Now</Button>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-2xl font-bold">${course.price}</span>
+                        <Badge className={getStatusColor(course.status)}>
+                          {course.status}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-center gap-1">
+                          <Users className="h-4 w-4" />
+                          <span>{course.students} students</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          <span>{course.duration}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                          <span>{course.rating}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <BookOpen className="h-4 w-4" />
+                          <span>{course.modules} modules</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Completion Rate</span>
+                          <span>{course.completionRate}%</span>
+                        </div>
+                        <Progress value={course.completionRate} className="h-2" />
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => handleCourseAction('edited', course.id)}>
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleCourseAction('previewed', course.id)}>
+                          <Eye className="h-4 w-4 mr-1" />
+                          Preview
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleCourseAction('duplicated', course.id)}>
+                          <Plus className="h-4 w-4 mr-1" />
+                          Duplicate
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -489,31 +639,36 @@ export default function MembershipDashboard() {
             </div>
           </TabsContent>
 
-          {/* Other tabs would continue here with Payment Management, Community, Analytics, and Settings */}
-          <TabsContent value="access" className="space-y-6">
-            <div>
+          {/* Access Control Tab */}
+          <TabsContent value="access-control" className="space-y-6">
+            <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Access Control & Membership Tiers</h2>
-              <p className="text-muted-foreground">Manage user roles, permissions, and membership levels</p>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Tier
+              </Button>
             </div>
 
-            {/* Membership Tiers */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {membershipTiers.map((tier) => (
-                <Card key={tier.id} className="relative overflow-hidden">
-                  <div className={`h-2 ${tier.color}`}></div>
+                <Card key={tier.id} className={`relative ${tier.isPopular ? 'border-blue-500 border-2' : ''}`}>
+                  {tier.isPopular && (
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                      <Badge className="bg-blue-500 text-white">Most Popular</Badge>
+                    </div>
+                  )}
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Crown className="h-5 w-5" />
+                      <Crown className="h-5 w-5 text-yellow-500" />
                       {tier.name}
                     </CardTitle>
+                    <p className="text-muted-foreground">{tier.description}</p>
                     <div className="text-3xl font-bold">
-                      ${tier.price}
-                      <span className="text-sm font-normal text-muted-foreground">/{tier.billingPeriod}</span>
+                      ${tier.price}<span className="text-sm font-normal text-muted-foreground">/month</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">Access Level {tier.accessLevel}</p>
                   </CardHeader>
                   <CardContent>
-                    <ul className="space-y-2">
+                    <ul className="space-y-2 mb-6">
                       {tier.features.map((feature, index) => (
                         <li key={index} className="flex items-center gap-2">
                           <CheckCircle className="h-4 w-4 text-green-500" />
@@ -521,615 +676,572 @@ export default function MembershipDashboard() {
                         </li>
                       ))}
                     </ul>
-                    <Button className="w-full mt-4" variant="outline">
-                      Edit Tier
-                    </Button>
+                    <div className="space-y-2 text-sm text-muted-foreground mb-4">
+                      <p>Max Courses: {tier.maxCourses || 'Unlimited'}</p>
+                      <p>Max Students: {tier.maxStudents || 'Unlimited'}</p>
+                      <p>Support: {tier.support}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" className="flex-1">
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit Tier
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <Eye className="h-4 w-4 mr-1" />
+                        View Users
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
-          </TabsContent>
 
-          {/* Simple placeholder tabs for remaining sections */}
-          <TabsContent value="builder">
+            {/* Access Control Settings */}
             <Card>
               <CardHeader>
-                <CardTitle>Course Builder</CardTitle>
-                <p className="text-muted-foreground">Drag and drop course builder with full LMS capabilities</p>
+                <CardTitle>Access Control Settings</CardTitle>
+                <p className="text-muted-foreground">
+                  Configure how students access your courses and content
+                </p>
               </CardHeader>
-              <CardContent>
-                <Button onClick={() => navigate("/course-builder")}>
-                  Open Full Course Builder
-                </Button>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Require Email Verification</Label>
+                        <p className="text-sm text-muted-foreground">Students must verify email before access</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Enable Drip Content</Label>
+                        <p className="text-sm text-muted-foreground">Release content gradually over time</p>
+                      </div>
+                      <Switch />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Certificate Requirements</Label>
+                        <p className="text-sm text-muted-foreground">Students must complete all modules</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Download Protection</Label>
+                        <p className="text-sm text-muted-foreground">Prevent unauthorized downloads</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>IP Restrictions</Label>
+                        <p className="text-sm text-muted-foreground">Limit access by IP address</p>
+                      </div>
+                      <Switch />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Session Timeout</Label>
+                        <p className="text-sm text-muted-foreground">Auto-logout inactive users</p>
+                      </div>
+                      <Switch />
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* Course Builder Tab */}
+          <TabsContent value="course-builder" className="space-y-6">
+            <div className="text-center py-12">
+              <BookOpen className="h-16 w-16 mx-auto text-blue-500 mb-4" />
+              <h2 className="text-2xl font-bold mb-2">Professional Course Builder</h2>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                Create engaging courses with our drag-and-drop builder, AI assistance, and advanced features.
+              </p>
+              <Button 
+                size="lg" 
+                onClick={() => window.location.href = '/course-builder'}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Launch Course Builder
+              </Button>
+            </div>
+          </TabsContent>
+
+          {/* Payments Tab */}
           <TabsContent value="payments" className="space-y-6">
-            <div>
+            <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Payment Management</h2>
-              <p className="text-muted-foreground">Manage subscriptions, billing, coupons, and payment tracking</p>
+              <div className="flex gap-2">
+                <Button variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Transactions
+                </Button>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Manual Payment
+                </Button>
+              </div>
             </div>
 
-            {/* Payment Overview Cards */}
+            {/* Payment Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Revenue</CardTitle>
+                  <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-600">$12,847</div>
-                  <div className="text-xs text-green-600">+18% from last month</div>
+                  <div className="text-2xl font-bold">$2,350</div>
+                  <p className="text-xs text-green-600">+12% from yesterday</p>
                 </CardContent>
               </Card>
+              
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Active Subscriptions</CardTitle>
+                  <CardTitle className="text-sm font-medium">Pending Payments</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">342</div>
-                  <div className="text-xs text-blue-600">+12 new this week</div>
+                  <div className="text-2xl font-bold">$890</div>
+                  <p className="text-xs text-yellow-600">3 transactions</p>
                 </CardContent>
               </Card>
+              
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Failed Payments</CardTitle>
+                  <CardTitle className="text-sm font-medium">Refund Requests</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-red-600">8</div>
-                  <div className="text-xs text-red-600">Requires attention</div>
+                  <div className="text-2xl font-bold">2</div>
+                  <p className="text-xs text-red-600">$298 requested</p>
                 </CardContent>
               </Card>
+              
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Coupon Usage</CardTitle>
+                  <CardTitle className="text-sm font-medium">Payment Success Rate</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">23%</div>
-                  <div className="text-xs text-orange-600">156 used this month</div>
+                  <div className="text-2xl font-bold">98.5%</div>
+                  <p className="text-xs text-green-600">Above average</p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Payment Method Management */}
+            {/* Payment Methods & Settings */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Payment Methods</CardTitle>
+                  <p className="text-muted-foreground">Configure accepted payment methods</p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="h-5 w-5" />
+                      <div>
+                        <p className="font-medium">Credit Cards</p>
+                        <p className="text-sm text-muted-foreground">Visa, Mastercard, Amex</p>
+                      </div>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="h-5 w-5" />
+                      <div>
+                        <p className="font-medium">PayPal</p>
+                        <p className="text-sm text-muted-foreground">PayPal payments</p>
+                      </div>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Globe className="h-5 w-5" />
+                      <div>
+                        <p className="font-medium">Stripe</p>
+                        <p className="text-sm text-muted-foreground">International payments</p>
+                      </div>
+                    </div>
+                    <Switch />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Subscription Settings</CardTitle>
+                  <p className="text-muted-foreground">Manage recurring payments</p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Default Billing Cycle</Label>
+                    <Select defaultValue="monthly">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="quarterly">Quarterly</SelectItem>
+                        <SelectItem value="yearly">Yearly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Payment Retry Attempts</Label>
+                    <Select defaultValue="3">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 attempt</SelectItem>
+                        <SelectItem value="3">3 attempts</SelectItem>
+                        <SelectItem value="5">5 attempts</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Grace Period</Label>
+                      <p className="text-sm text-muted-foreground">Allow access during payment retry</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Transactions */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  Payment Methods
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">Manage accepted payment methods and gateway settings</p>
+                <CardTitle>Recent Transactions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">Stripe</h4>
-                      <Badge className="bg-green-100 text-green-700">Active</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-3">Credit/Debit Cards, ACH</p>
-                    <Button size="sm" variant="outline">Configure</Button>
-                  </div>
-                  <div className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">PayPal</h4>
-                      <Badge className="bg-green-100 text-green-700">Active</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-3">PayPal Payments</p>
-                    <Button size="sm" variant="outline">Configure</Button>
-                  </div>
-                  <div className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">Apple Pay</h4>
-                      <Badge variant="secondary">Inactive</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-3">Mobile Payments</p>
-                    <Button size="sm" variant="outline">Enable</Button>
-                  </div>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Student</TableHead>
+                        <TableHead>Course</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Method</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {payments.map((payment) => (
+                        <TableRow key={payment.id}>
+                          <TableCell className="font-medium">{payment.studentName}</TableCell>
+                          <TableCell>{payment.courseName}</TableCell>
+                          <TableCell>${payment.amount}</TableCell>
+                          <TableCell>{payment.paymentMethod}</TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(payment.status)}>
+                              {payment.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{payment.date}</TableCell>
+                          <TableCell>
+                            <Button size="sm" variant="outline">
+                              <Eye className="h-4 w-4 mr-1" />
+                              Details
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Subscription Management */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Active Subscriptions</CardTitle>
-                <p className="text-sm text-muted-foreground">Monitor and manage member subscriptions</p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[1, 2, 3, 4, 5].map((sub) => (
-                    <div key={sub} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Users className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium">john.doe@example.com</h4>
-                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                            <span>Gold Member - $59/month</span>
-                            <span>•</span>
-                            <span>Next billing: Jan 15, 2024</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge className="bg-green-100 text-green-700">Active</Badge>
-                        <Button size="sm" variant="outline">Manage</Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          {/* Community Tab */}
+          <TabsContent value="community" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Community Forum</h2>
+              <div className="flex gap-2">
+                <Button variant="outline">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Forum Settings
+                </Button>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Category
+                </Button>
+              </div>
+            </div>
 
-            {/* Coupon Management */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <Gift className="h-5 w-5" />
-                    Coupons & Discounts
-                  </span>
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Coupon
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[
-                    { code: 'SAVE50', type: 'Percentage', value: '50%', uses: '23/100', expires: 'Dec 31, 2024' },
-                    { code: 'WELCOME20', type: 'Percentage', value: '20%', uses: '156/500', expires: 'Ongoing' },
-                    { code: 'FLASH25', type: 'Fixed', value: '$25', uses: '89/200', expires: 'Jan 15, 2024' }
-                  ].map((coupon, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                          <Gift className="h-5 w-5 text-orange-600" />
-                        </div>
+            {/* Forum Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">1,847</div>
+                  <p className="text-xs text-green-600">+23 this week</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">342</div>
+                  <p className="text-xs text-blue-600">Last 7 days</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Unanswered</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">12</div>
+                  <p className="text-xs text-orange-600">Need attention</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">73%</div>
+                  <p className="text-xs text-green-600">Above average</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Forum Management */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Forum Categories</CardTitle>
+                  <p className="text-muted-foreground">Organize discussions by topics</p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {['General Discussion', 'Technical Support', 'Course Q&A', 'Feature Requests', 'Success Stories'].map((category, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <MessageCircle className="h-4 w-4" />
                         <div>
-                          <h4 className="font-medium">{coupon.code}</h4>
-                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                            <span>{coupon.type}: {coupon.value}</span>
-                            <span>•</span>
-                            <span>Used: {coupon.uses}</span>
-                            <span>•</span>
-                            <span>Expires: {coupon.expires}</span>
-                          </div>
+                          <p className="font-medium">{category}</p>
+                          <p className="text-sm text-muted-foreground">{Math.floor(Math.random() * 50) + 10} posts</p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Button size="sm" variant="outline">Edit</Button>
-                        <Button size="sm" variant="ghost">
-                          <Copy className="h-4 w-4" />
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="outline">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Settings className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
                   ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Revenue Analytics */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Revenue Analytics</CardTitle>
-                <p className="text-sm text-muted-foreground">Track revenue performance and trends</p>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">$154,290</div>
-                    <div className="text-sm text-green-600">Total Revenue (YTD)</div>
-                  </div>
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">$47.50</div>
-                    <div className="text-sm text-blue-600">Average Revenue Per User</div>
-                  </div>
-                  <div className="text-center p-4 bg-purple-50 rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">94.2%</div>
-                    <div className="text-sm text-purple-600">Payment Success Rate</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Invoice Management */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Invoices</CardTitle>
-                <p className="text-sm text-muted-foreground">Track and manage billing invoices</p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((invoice) => (
-                    <div key={invoice} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
-                          <FileText className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium">INV-{invoice.toString().padStart(4, '0')}</h4>
-                          <p className="text-sm text-muted-foreground">john.doe@example.com</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <div className="text-right">
-                          <div className="font-medium">$59.00</div>
-                          <div className="text-sm text-muted-foreground">Jan {invoice}, 2024</div>
-                        </div>
-                        <Badge className="bg-green-100 text-green-700">Paid</Badge>
-                        <Button size="sm" variant="outline">View</Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="community" className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold">Community Forums</h2>
-              <p className="text-muted-foreground">Engage with members through private forums and group discussions</p>
-            </div>
-
-            {/* Community Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Active Members</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">1,247</div>
-                  <div className="text-xs text-green-600">+8% this week</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Posts</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">3,429</div>
-                  <div className="text-xs text-blue-600">+127 today</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Active Discussions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">89</div>
-                  <div className="text-xs text-purple-600">24 new this week</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Engagement Rate</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">67%</div>
-                  <div className="text-xs text-orange-600">Above average</div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Forum Categories */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <MessageCircle className="h-5 w-5" />
-                    Forum Categories
-                  </span>
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Category
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    { name: 'General Discussion', posts: 456, members: 234, color: 'bg-blue-100', icon: MessageCircle },
-                    { name: 'Course Q&A', posts: 892, members: 445, color: 'bg-green-100', icon: HelpCircle },
-                    { name: 'Success Stories', posts: 234, members: 156, color: 'bg-yellow-100', icon: Trophy },
-                    { name: 'Networking', posts: 567, members: 332, color: 'bg-purple-100', icon: Users },
-                    { name: 'Announcements', posts: 45, members: 890, color: 'bg-red-100', icon: Bell },
-                    { name: 'Feature Requests', posts: 123, members: 89, color: 'bg-indigo-100', icon: Zap }
-                  ].map((category) => (
-                    <div key={category.name} className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <div className={`w-10 h-10 ${category.color} rounded-lg flex items-center justify-center`}>
-                          <category.icon className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium">{category.name}</h4>
-                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                            <span>{category.posts} posts</span>
-                            <span>•</span>
-                            <span>{category.members} members</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Discussions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Discussions</CardTitle>
-                <p className="text-sm text-muted-foreground">Latest activity across all forums</p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[
-                    { title: 'Best practices for email marketing automation?', author: 'Sarah Johnson', replies: 12, category: 'Course Q&A', time: '2 hours ago', badge: 'Hot' },
-                    { title: 'Just hit $10K MRR! Here\'s my journey', author: 'Mike Chen', replies: 28, category: 'Success Stories', time: '4 hours ago', badge: 'Popular' },
-                    { title: 'Anyone interested in a local meetup?', author: 'Emma Davis', replies: 7, category: 'Networking', time: '6 hours ago', badge: null },
-                    { title: 'New course announcement: Advanced Funnels', author: 'Admin', replies: 15, category: 'Announcements', time: '1 day ago', badge: 'Pinned' },
-                    { title: 'Feature request: Dark mode for dashboard', author: 'Alex Turner', replies: 9, category: 'Feature Requests', time: '2 days ago', badge: null }
-                  ].map((discussion, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-medium">{discussion.author.charAt(0)}</span>
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-medium">{discussion.title}</h4>
-                            {discussion.badge && (
-                              <Badge className={
-                                discussion.badge === 'Hot' ? 'bg-red-100 text-red-700' :
-                                discussion.badge === 'Popular' ? 'bg-orange-100 text-orange-700' :
-                                discussion.badge === 'Pinned' ? 'bg-blue-100 text-blue-700' :
-                                'bg-gray-100 text-gray-700'
-                              }>
-                                {discussion.badge}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                            <span>by {discussion.author}</span>
-                            <span>•</span>
-                            <span>{discussion.category}</span>
-                            <span>•</span>
-                            <span>{discussion.replies} replies</span>
-                            <span>•</span>
-                            <span>{discussion.time}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <Button size="sm" variant="outline">Join Discussion</Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Member Activity */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Top Contributors</CardTitle>
-                  <p className="text-sm text-muted-foreground">Most active community members</p>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {[
-                      { name: 'Sarah Johnson', posts: 234, likes: 1820, level: 'Expert' },
-                      { name: 'Mike Chen', posts: 189, likes: 1456, level: 'Advanced' },
-                      { name: 'Emma Davis', posts: 156, likes: 1203, level: 'Advanced' },
-                      { name: 'Alex Turner', posts: 134, likes: 987, level: 'Intermediate' },
-                      { name: 'Lisa Wang', posts: 98, likes: 654, level: 'Intermediate' }
-                    ].map((member, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-sm font-medium">{member.name.charAt(0)}</span>
-                          </div>
-                          <div>
-                            <h4 className="font-medium">{member.name}</h4>
-                            <p className="text-sm text-muted-foreground">{member.posts} posts • {member.likes} likes</p>
-                          </div>
-                        </div>
-                        <Badge variant="outline">{member.level}</Badge>
-                      </div>
-                    ))}
-                  </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
                   <CardTitle>Moderation Tools</CardTitle>
-                  <p className="text-sm text-muted-foreground">Manage community content and behavior</p>
+                  <p className="text-muted-foreground">Manage community content</p>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button variant="outline" className="justify-start">
-                      <Shield className="h-4 w-4 mr-2" />
-                      Pending Posts
-                    </Button>
-                    <Button variant="outline" className="justify-start">
-                      <Flag className="h-4 w-4 mr-2" />
-                      Reported Content
-                    </Button>
-                    <Button variant="outline" className="justify-start">
-                      <UserCheck className="h-4 w-4 mr-2" />
-                      Member Roles
-                    </Button>
-                    <Button variant="outline" className="justify-start">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Forum Settings
-                    </Button>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Auto-moderation</Label>
+                      <p className="text-sm text-muted-foreground">Automatically flag inappropriate content</p>
+                    </div>
+                    <Switch defaultChecked />
                   </div>
                   
-                  <div className="pt-4 border-t">
-                    <h4 className="font-medium mb-2">Quick Actions</h4>
-                    <div className="space-y-2">
-                      <Button className="w-full" variant="outline">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create Announcement
-                      </Button>
-                      <Button className="w-full" variant="outline">
-                        <Mail className="h-4 w-4 mr-2" />
-                        Send Newsletter
-                      </Button>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Post Approval</Label>
+                      <p className="text-sm text-muted-foreground">Require approval for new posts</p>
                     </div>
+                    <Switch />
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="analytics" className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold">Learning Analytics</h2>
-              <p className="text-muted-foreground">Track student progress, completion rates, and engagement metrics</p>
-            </div>
-
-            {/* Analytics Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Course Completion</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">74.2%</div>
-                  <div className="text-xs text-green-600">+5.3% from last month</div>
-                  <Progress value={74.2} className="mt-2" />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Average Study Time</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">2.4h</div>
-                  <div className="text-xs text-blue-600">Per week per student</div>
-                  <div className="text-xs text-muted-foreground mt-1">↑ 12min from last week</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Student Satisfaction</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold flex items-center gap-1">
-                    4.8 <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Email Notifications</Label>
+                      <p className="text-sm text-muted-foreground">Notify moderators of new posts</p>
+                    </div>
+                    <Switch defaultChecked />
                   </div>
-                  <div className="text-xs text-orange-600">Based on 1,234 reviews</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Engagement Rate</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">89.3%</div>
-                  <div className="text-xs text-purple-600">Weekly active learners</div>
-                  <Progress value={89.3} className="mt-2" />
+                  
+                  <Button className="w-full">
+                    <Flag className="h-4 w-4 mr-2" />
+                    View Flagged Content
+                  </Button>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Course Performance */}
+            {/* Recent Forum Activity */}
             <Card>
               <CardHeader>
-                <CardTitle>Course Performance Analysis</CardTitle>
-                <p className="text-sm text-muted-foreground">Detailed metrics for each course</p>
+                <CardTitle>Recent Forum Activity</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {[
-                    { course: 'Digital Marketing Mastery', students: 342, completion: 78, rating: 4.9, revenue: 58650 },
-                    { course: 'AI-Powered Lead Generation', students: 287, completion: 65, rating: 4.7, revenue: 41230 },
-                    { course: 'Advanced Sales Funnels', students: 189, completion: 82, rating: 4.8, revenue: 67890 },
-                    { course: 'Email Marketing Automation', students: 156, completion: 71, rating: 4.6, revenue: 28470 },
-                    { course: 'Social Media Strategy', students: 134, completion: 69, rating: 4.5, revenue: 19650 }
-                  ].map((course, index) => (
-                    <div key={index} className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-medium">{course.course}</h4>
-                        <div className="flex items-center space-x-4 text-sm">
-                          <span className="flex items-center gap-1">
-                            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                            {course.rating}
-                          </span>
-                          <span className="font-medium text-green-600">${course.revenue.toLocaleString()}</span>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-3 gap-4">
-                        <div>
-                          <div className="text-sm text-muted-foreground">Students</div>
-                          <div className="font-medium">{course.students}</div>
-                        </div>
-                        <div>
-                          <div className="text-sm text-muted-foreground">Completion Rate</div>
-                          <div className="font-medium">{course.completion}%</div>
-                          <Progress value={course.completion} className="mt-1" />
-                        </div>
-                        <div>
-                          <div className="text-sm text-muted-foreground">Avg. Revenue per Student</div>
-                          <div className="font-medium">${Math.round(course.revenue / course.students)}</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Post Title</TableHead>
+                        <TableHead>Author</TableHead>
+                        <TableHead>Course</TableHead>
+                        <TableHead>Replies</TableHead>
+                        <TableHead>Views</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Last Activity</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {forumPosts.map((post) => (
+                        <TableRow key={post.id}>
+                          <TableCell className="font-medium">{post.title}</TableCell>
+                          <TableCell>{post.author}</TableCell>
+                          <TableCell>{post.course}</TableCell>
+                          <TableCell>{post.replies}</TableCell>
+                          <TableCell>{post.views}</TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(post.status)}>
+                              {post.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{post.lastActivity}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button size="sm" variant="outline">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="outline">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="outline">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Student Progress Tracking */}
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Analytics Dashboard</h2>
+              <div className="flex gap-2">
+                <Button variant="outline">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Date Range
+                </Button>
+                <Button variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Report
+                </Button>
+              </div>
+            </div>
+
+            {/* Key Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Course Completion Rate</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">78.5%</div>
+                  <div className="flex items-center text-xs">
+                    <ArrowUpRight className="h-3 w-3 text-green-600 mr-1" />
+                    <span className="text-green-600">+5.2% vs last month</span>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Student Engagement</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">92.3%</div>
+                  <div className="flex items-center text-xs">
+                    <ArrowUpRight className="h-3 w-3 text-green-600 mr-1" />
+                    <span className="text-green-600">+2.1% vs last month</span>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Average Session Time</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">24m</div>
+                  <div className="flex items-center text-xs">
+                    <ArrowDownRight className="h-3 w-3 text-red-600 mr-1" />
+                    <span className="text-red-600">-1.3% vs last month</span>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Churn Rate</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">3.2%</div>
+                  <div className="flex items-center text-xs">
+                    <ArrowDownRight className="h-3 w-3 text-green-600 mr-1" />
+                    <span className="text-green-600">-0.8% vs last month</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Charts and Analytics */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Student Progress Distribution</CardTitle>
-                  <p className="text-sm text-muted-foreground">How students are progressing through courses</p>
+                  <CardTitle>Revenue Trends</CardTitle>
+                  <p className="text-muted-foreground">Monthly revenue and student growth</p>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span>Completed (90-100%)</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div className="bg-green-500 h-2 rounded-full" style={{ width: '34%' }}></div>
-                        </div>
-                        <span className="text-sm font-medium">34%</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Nearly Complete (70-89%)</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div className="bg-blue-500 h-2 rounded-full" style={{ width: '28%' }}></div>
-                        </div>
-                        <span className="text-sm font-medium">28%</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>In Progress (30-69%)</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div className="bg-orange-500 h-2 rounded-full" style={{ width: '23%' }}></div>
-                        </div>
-                        <span className="text-sm font-medium">23%</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Just Started (0-29%)</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div className="bg-red-500 h-2 rounded-full" style={{ width: '15%' }}></div>
-                        </div>
-                        <span className="text-sm font-medium">15%</span>
-                      </div>
+                  <div className="h-80 flex items-center justify-center bg-gray-50 rounded-lg">
+                    <div className="text-center">
+                      <PieChart className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+                      <p className="text-gray-600">Revenue Chart</p>
+                      <p className="text-sm text-gray-500">Integration with charting library needed</p>
                     </div>
                   </div>
                 </CardContent>
@@ -1137,406 +1249,367 @@ export default function MembershipDashboard() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Engagement Metrics</CardTitle>
-                  <p className="text-sm text-muted-foreground">Student activity and participation</p>
+                  <CardTitle>Student Progress</CardTitle>
+                  <p className="text-muted-foreground">Course completion analytics</p>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <div className="text-xl font-bold text-blue-600">12.4k</div>
-                      <div className="text-xs text-blue-600">Video Views (This Month)</div>
-                    </div>
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <div className="text-xl font-bold text-green-600">8.2k</div>
-                      <div className="text-xs text-green-600">Quiz Attempts</div>
-                    </div>
-                    <div className="text-center p-3 bg-purple-50 rounded-lg">
-                      <div className="text-xl font-bold text-purple-600">3.1k</div>
-                      <div className="text-xs text-purple-600">Assignment Submissions</div>
-                    </div>
-                    <div className="text-center p-3 bg-orange-50 rounded-lg">
-                      <div className="text-xl font-bold text-orange-600">1.8k</div>
-                      <div className="text-xs text-orange-600">Forum Posts</div>
-                    </div>
-                  </div>
-                  
-                  <div className="pt-4 border-t">
-                    <h4 className="font-medium mb-2">Peak Learning Hours</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>9:00 AM - 11:00 AM</span>
-                        <span className="font-medium">Peak Activity</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>2:00 PM - 4:00 PM</span>
-                        <span className="font-medium">High Activity</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>7:00 PM - 9:00 PM</span>
-                        <span className="font-medium">Moderate Activity</span>
-                      </div>
+                <CardContent>
+                  <div className="h-80 flex items-center justify-center bg-gray-50 rounded-lg">
+                    <div className="text-center">
+                      <Activity className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+                      <p className="text-gray-600">Progress Chart</p>
+                      <p className="text-sm text-gray-500">Integration with charting library needed</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Retention and Revenue Analytics */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Retention & Revenue Analytics</CardTitle>
-                <p className="text-sm text-muted-foreground">Long-term student success and business metrics</p>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <h4 className="font-medium mb-3">Student Retention</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>30-day retention</span>
-                        <span className="font-medium">87%</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>90-day retention</span>
-                        <span className="font-medium">64%</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>180-day retention</span>
-                        <span className="font-medium">48%</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>1-year retention</span>
-                        <span className="font-medium">32%</span>
-                      </div>
+            {/* Device & Location Analytics */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Device Analytics</CardTitle>
+                  <p className="text-muted-foreground">How students access your courses</p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Monitor className="h-4 w-4" />
+                      <span>Desktop</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">52%</span>
+                      <Progress value={52} className="w-20 h-2" />
                     </div>
                   </div>
                   
-                  <div>
-                    <h4 className="font-medium mb-3">Revenue Metrics</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Monthly Recurring Revenue</span>
-                        <span className="font-medium">$28,450</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Average Revenue Per Student</span>
-                        <span className="font-medium">$247</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Customer Lifetime Value</span>
-                        <span className="font-medium">$892</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Churn Rate</span>
-                        <span className="font-medium text-red-600">3.2%</span>
-                      </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Smartphone className="h-4 w-4" />
+                      <span>Mobile</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">35%</span>
+                      <Progress value={35} className="w-20 h-2" />
                     </div>
                   </div>
                   
-                  <div>
-                    <h4 className="font-medium mb-3">Performance Insights</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="p-2 bg-green-50 rounded text-green-700">
-                        ✓ Course completion rates above industry average
-                      </div>
-                      <div className="p-2 bg-blue-50 rounded text-blue-700">
-                        ✓ Strong student engagement metrics
-                      </div>
-                      <div className="p-2 bg-orange-50 rounded text-orange-700">
-                        ⚠ Consider improving 180-day retention
-                      </div>
-                      <div className="p-2 bg-purple-50 rounded text-purple-700">
-                        ✓ Revenue growth trending upward
-                      </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Tablet className="h-4 w-4" />
+                      <span>Tablet</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">13%</span>
+                      <Progress value={13} className="w-20 h-2" />
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Performance Metrics</CardTitle>
+                  <p className="text-muted-foreground">Key performance indicators</p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span>Lesson Drop-off Rate</span>
+                    <span className="font-bold">12.3%</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span>Quiz Pass Rate</span>
+                    <span className="font-bold">87.5%</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span>Assignment Submission</span>
+                    <span className="font-bold">94.2%</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span>Forum Participation</span>
+                    <span className="font-bold">43.8%</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span>Certificate Claims</span>
+                    <span className="font-bold">76.1%</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
+          {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-6">
-            <div>
+            <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Platform Settings</h2>
-              <p className="text-muted-foreground">Configure your membership site, integrations, and platform preferences</p>
-            </div>
-
-            {/* General Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle>General Settings</CardTitle>
-                <p className="text-sm text-muted-foreground">Basic platform configuration</p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="siteName">Site Name</Label>
-                    <Input id="siteName" defaultValue="My Learning Platform" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="siteUrl">Site URL</Label>
-                    <Input id="siteUrl" defaultValue="https://mylearning.com" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="supportEmail">Support Email</Label>
-                    <Input id="supportEmail" defaultValue="support@mylearning.com" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="timezone">Timezone</Label>
-                    <Select defaultValue="UTC">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="UTC">UTC</SelectItem>
-                        <SelectItem value="PST">Pacific Standard Time</SelectItem>
-                        <SelectItem value="EST">Eastern Standard Time</SelectItem>
-                        <SelectItem value="GMT">Greenwich Mean Time</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="siteDescription">Site Description</Label>
-                  <Textarea 
-                    id="siteDescription" 
-                    defaultValue="A comprehensive learning platform for digital marketing mastery"
-                    rows={3}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Branding Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Branding & Appearance</CardTitle>
-                <p className="text-sm text-muted-foreground">Customize your platform's look and feel</p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <Label>Logo Upload</Label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                      <Image className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600">Upload your logo</p>
-                      <Button size="sm" variant="outline" className="mt-2">Choose File</Button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Favicon</Label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                      <Globe className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600">Upload favicon</p>
-                      <Button size="sm" variant="outline" className="mt-2">Choose File</Button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Color Theme</Label>
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-6 h-6 bg-blue-500 rounded"></div>
-                        <Label>Primary Color</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-6 h-6 bg-purple-500 rounded"></div>
-                        <Label>Secondary Color</Label>
-                      </div>
-                      <Button size="sm" variant="outline">Customize Colors</Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Email Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Email Configuration</CardTitle>
-                <p className="text-sm text-muted-foreground">Configure email delivery and templates</p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label>Email Provider</Label>
-                    <Select defaultValue="sendgrid">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sendgrid">SendGrid</SelectItem>
-                        <SelectItem value="mailgun">Mailgun</SelectItem>
-                        <SelectItem value="ses">Amazon SES</SelectItem>
-                        <SelectItem value="smtp">Custom SMTP</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="fromEmail">From Email Address</Label>
-                    <Input id="fromEmail" defaultValue="noreply@mylearning.com" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="fromName">From Name</Label>
-                    <Input id="fromName" defaultValue="My Learning Platform" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="replyEmail">Reply-To Email</Label>
-                    <Input id="replyEmail" defaultValue="support@mylearning.com" />
-                  </div>
-                </div>
-                
-                <div className="border-t pt-6">
-                  <h4 className="font-medium mb-4">Email Templates</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[
-                      'Welcome Email', 'Course Enrollment', 'Payment Receipt', 'Password Reset',
-                      'Course Completion', 'Subscription Renewal', 'Cancellation', 'Weekly Digest'
-                    ].map((template) => (
-                      <div key={template} className="flex items-center justify-between p-3 border rounded">
-                        <span className="font-medium">{template}</span>
-                        <Button size="sm" variant="outline">Edit</Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Notification Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Notification Preferences</CardTitle>
-                <p className="text-sm text-muted-foreground">Control how and when notifications are sent</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  {[
-                    { title: 'New Student Enrollments', description: 'Get notified when new students join', enabled: true },
-                    { title: 'Payment Notifications', description: 'Receive alerts for successful and failed payments', enabled: true },
-                    { title: 'Course Completions', description: 'Get notified when students complete courses', enabled: false },
-                    { title: 'Community Activity', description: 'Alerts for new forum posts and comments', enabled: true },
-                    { title: 'System Updates', description: 'Important platform updates and maintenance notices', enabled: true },
-                    { title: 'Weekly Reports', description: 'Receive weekly analytics and performance reports', enabled: false }
-                  ].map((notification, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">{notification.title}</h4>
-                        <p className="text-sm text-muted-foreground">{notification.description}</p>
-                      </div>
-                      <Switch defaultChecked={notification.enabled} />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Integration Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Third-Party Integrations</CardTitle>
-                <p className="text-sm text-muted-foreground">Connect with external tools and services</p>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    { name: 'Google Analytics', status: 'Connected', icon: BarChart3, color: 'text-green-600' },
-                    { name: 'Facebook Pixel', status: 'Connected', icon: Target, color: 'text-green-600' },
-                    { name: 'Zapier', status: 'Not Connected', icon: Zap, color: 'text-gray-400' },
-                    { name: 'Slack', status: 'Connected', icon: MessageCircle, color: 'text-green-600' },
-                    { name: 'Mailchimp', status: 'Not Connected', icon: Mail, color: 'text-gray-400' },
-                    { name: 'Stripe', status: 'Connected', icon: CreditCard, color: 'text-green-600' }
-                  ].map((integration) => (
-                    <div key={integration.name} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <integration.icon className={`h-6 w-6 ${integration.color}`} />
-                        <div>
-                          <h4 className="font-medium">{integration.name}</h4>
-                          <p className="text-sm text-muted-foreground">{integration.status}</p>
-                        </div>
-                      </div>
-                      <Button size="sm" variant="outline">
-                        {integration.status === 'Connected' ? 'Configure' : 'Connect'}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Security Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Security & Privacy</CardTitle>
-                <p className="text-sm text-muted-foreground">Manage security settings and privacy options</p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Two-Factor Authentication</h4>
-                      <p className="text-sm text-muted-foreground">Require 2FA for admin access</p>
-                    </div>
-                    <Switch defaultChecked={true} />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">SSL Certificate</h4>
-                      <p className="text-sm text-muted-foreground">Force HTTPS connections</p>
-                    </div>
-                    <Badge className="bg-green-100 text-green-700">Active</Badge>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">GDPR Compliance</h4>
-                      <p className="text-sm text-muted-foreground">Enable GDPR compliance features</p>
-                    </div>
-                    <Switch defaultChecked={true} />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Data Backup</h4>
-                      <p className="text-sm text-muted-foreground">Automatic daily backups</p>
-                    </div>
-                    <Switch defaultChecked={true} />
-                  </div>
-                </div>
-                
-                <div className="border-t pt-6">
-                  <h4 className="font-medium mb-4">Data Management</h4>
-                  <div className="space-y-2">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Download className="h-4 w-4 mr-2" />
-                      Export User Data
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <Archive className="h-4 w-4 mr-2" />
-                      Backup Database
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start text-red-600">
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete All Data
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Save Settings */}
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline">Reset to Defaults</Button>
-              <Button className="bg-blue-500 hover:bg-blue-600">
+              <Button>
                 <Save className="h-4 w-4 mr-2" />
                 Save All Settings
               </Button>
             </div>
-          </TabsContent>
 
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* General Settings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>General Settings</CardTitle>
+                  <p className="text-muted-foreground">Basic platform configuration</p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Platform Name</Label>
+                    <Input defaultValue="My Learning Platform" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Description</Label>
+                    <Textarea defaultValue="Professional online learning platform" rows={3} />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Default Language</Label>
+                    <Select defaultValue="en">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="es">Spanish</SelectItem>
+                        <SelectItem value="fr">French</SelectItem>
+                        <SelectItem value="de">German</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Time Zone</Label>
+                    <Select defaultValue="utc">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="utc">UTC</SelectItem>
+                        <SelectItem value="est">Eastern Time</SelectItem>
+                        <SelectItem value="pst">Pacific Time</SelectItem>
+                        <SelectItem value="gmt">Greenwich Mean Time</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Branding Settings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Branding & Customization</CardTitle>
+                  <p className="text-muted-foreground">Customize your platform appearance</p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Logo Upload</Label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                      <Image className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600">Upload your logo</p>
+                      <Button size="sm" variant="outline" className="mt-2">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Choose File
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Primary Color</Label>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-blue-500 rounded border"></div>
+                      <Input defaultValue="#3B82F6" />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Custom CSS</Label>
+                    <Textarea 
+                      placeholder="/* Add your custom CSS here */"
+                      rows={4}
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Integration Settings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Integrations</CardTitle>
+                  <p className="text-muted-foreground">Connect with third-party services</p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-5 w-5" />
+                      <div>
+                        <p className="font-medium">Email Service</p>
+                        <p className="text-sm text-muted-foreground">SendGrid, Mailgun</p>
+                      </div>
+                    </div>
+                    <Button size="sm" variant="outline">Configure</Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="h-5 w-5" />
+                      <div>
+                        <p className="font-medium">Payment Gateway</p>
+                        <p className="text-sm text-muted-foreground">Stripe, PayPal</p>
+                      </div>
+                    </div>
+                    <Button size="sm" variant="outline">Configure</Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <BarChart3 className="h-5 w-5" />
+                      <div>
+                        <p className="font-medium">Analytics</p>
+                        <p className="text-sm text-muted-foreground">Google Analytics</p>
+                      </div>
+                    </div>
+                    <Button size="sm" variant="outline">Configure</Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Webhook className="h-5 w-5" />
+                      <div>
+                        <p className="font-medium">Webhooks</p>
+                        <p className="text-sm text-muted-foreground">Custom integrations</p>
+                      </div>
+                    </div>
+                    <Button size="sm" variant="outline">Configure</Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Notification Settings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Notifications</CardTitle>
+                  <p className="text-muted-foreground">Configure notification preferences</p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>New Student Registration</Label>
+                      <p className="text-sm text-muted-foreground">Email when new students join</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Course Completion</Label>
+                      <p className="text-sm text-muted-foreground">Email when students complete courses</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Payment Notifications</Label>
+                      <p className="text-sm text-muted-foreground">Email for payment events</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Forum Activity</Label>
+                      <p className="text-sm text-muted-foreground">Email for new forum posts</p>
+                    </div>
+                    <Switch />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>System Alerts</Label>
+                      <p className="text-sm text-muted-foreground">Email for system issues</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Advanced Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Advanced Settings</CardTitle>
+                <p className="text-muted-foreground">Technical configuration options</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Debug Mode</Label>
+                        <p className="text-sm text-muted-foreground">Enable detailed logging</p>
+                      </div>
+                      <Switch />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>API Access</Label>
+                        <p className="text-sm text-muted-foreground">Enable REST API</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Backup Automation</Label>
+                        <p className="text-sm text-muted-foreground">Daily automated backups</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>SSL Enforcement</Label>
+                        <p className="text-sm text-muted-foreground">Force HTTPS connections</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Rate Limiting</Label>
+                        <p className="text-sm text-muted-foreground">Prevent API abuse</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Maintenance Mode</Label>
+                        <p className="text-sm text-muted-foreground">Temporarily disable access</p>
+                      </div>
+                      <Switch />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
     </div>
   );
-}
+};
+
+export default MembershipDashboard;
