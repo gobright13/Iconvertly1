@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,9 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
-import { toast } from 'sonner';
 import { 
   DndContext, 
   closestCenter,
@@ -25,8 +23,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { SortableModuleItem } from './SortableModuleItem';
 import { 
   Plus, 
   Play, 
@@ -49,69 +46,21 @@ import {
   Link,
   Code,
   Copy,
-  X,
-  Clock,
-  GripVertical,
-  Trash2,
-  MessageCircle,
-  ClipboardCheck,
-  FileVideo,
-  Youtube,
-  MonitorPlay,
-  ExternalLink,
-  Lightbulb,
-  Type,
-  Hash,
-  Palette,
-  Camera,
-  Film,
-  Speaker,
-  PenTool,
-  CheckSquare,
-  List,
-  ListChecks,
-  Star,
-  Award,
-  Target,
-  Layers,
-  Bold,
-  Italic,
-  Underline,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  ListOrdered,
-  Quote,
-  Heading1,
-  Heading2,
-  Heading3
+  X
 } from 'lucide-react';
 
 interface Lesson {
   id: string;
   title: string;
-  type: 'video' | 'text' | 'quiz' | 'assignment' | 'html' | 'link' | 'interactive_quiz';
+  type: 'video' | 'text' | 'quiz' | 'assignment' | 'html' | 'link';
   duration: number;
   content?: string;
   videoUrl?: string;
-  youtubeUrl?: string;
-  vimeoUrl?: string;
-  embedCode?: string;
   htmlContent?: string;
   externalLink?: string;
-  shortcode?: string;
-  featuredImage?: string;
-  description?: string;
   isCompleted: boolean;
   isLocked: boolean;
   order: number;
-  settings?: {
-    timeLimit?: number;
-    attempts?: number;
-    passingGrade?: number;
-    feedback?: string;
-    retryAllowed?: boolean;
-  };
 }
 
 interface Module {
@@ -128,17 +77,11 @@ interface Course {
   id: string;
   title: string;
   description: string;
-  richDescription?: string;
   price: number;
   currency: string;
   thumbnail?: string;
   authorName: string;
   authorBio: string;
-  authorImage?: string;
-  language: string;
-  level: 'beginner' | 'intermediate' | 'advanced';
-  category: string;
-  tags: string[];
   enrollmentLimit: number;
   enrollmentType: 'manual' | 'automatic';
   isPublished: boolean;
@@ -147,380 +90,7 @@ interface Course {
   modules: Module[];
   createdAt: Date;
   lastModified: Date;
-  status: 'draft' | 'published' | 'archived';
-  certificateEnabled: boolean;
-  completionCriteria: number;
-  estimatedDuration: number;
 }
-
-const LESSON_TYPES = [
-  { value: 'video', label: 'Video', icon: Video, color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
-  { value: 'text', label: 'Text/Reading', icon: FileText, color: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
-  { value: 'quiz', label: 'Quiz', icon: HelpCircle, color: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' },
-  { value: 'interactive_quiz', label: 'Interactive Quiz', icon: MessageCircle, color: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' },
-  { value: 'assignment', label: 'Assignment', icon: ClipboardCheck, color: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' },
-  { value: 'html', label: 'HTML Content', icon: Code, color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' },
-  { value: 'link', label: 'External Link', icon: Link, color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300' }
-];
-
-const CATEGORIES = [
-  'Business', 'Technology', 'Design', 'Marketing', 'Development', 
-  'Photography', 'Music', 'Health & Fitness', 'Language', 'Other'
-];
-
-const LANGUAGES = [
-  { code: 'en', name: 'English' },
-  { code: 'es', name: 'Spanish' },
-  { code: 'fr', name: 'French' },
-  { code: 'de', name: 'German' },
-  { code: 'pt', name: 'Portuguese' },
-  { code: 'it', name: 'Italian' },
-  { code: 'ru', name: 'Russian' },
-  { code: 'zh', name: 'Chinese' },
-  { code: 'ja', name: 'Japanese' },
-  { code: 'ko', name: 'Korean' }
-];
-
-// Rich Text Editor Component
-const RichTextEditor = ({ value, onChange, placeholder }: { value: string; onChange: (value: string) => void; placeholder?: string }) => {
-  const [content, setContent] = useState(value || '');
-
-  const handleFormatting = (command: string, value?: string) => {
-    document.execCommand(command, false, value);
-  };
-
-  return (
-    <div className="border rounded-lg overflow-hidden">
-      <div className="flex items-center gap-1 p-2 border-b bg-gray-50 dark:bg-gray-800 flex-wrap">
-        <Button size="sm" variant="ghost" onClick={() => handleFormatting('bold')} className="h-8 w-8 p-0">
-          <Bold className="h-4 w-4" />
-        </Button>
-        <Button size="sm" variant="ghost" onClick={() => handleFormatting('italic')} className="h-8 w-8 p-0">
-          <Italic className="h-4 w-4" />
-        </Button>
-        <Button size="sm" variant="ghost" onClick={() => handleFormatting('underline')} className="h-8 w-8 p-0">
-          <Underline className="h-4 w-4" />
-        </Button>
-        <Separator orientation="vertical" className="h-6" />
-        <Button size="sm" variant="ghost" onClick={() => handleFormatting('formatBlock', '<h1>')} className="h-8 px-2">
-          <Heading1 className="h-4 w-4" />
-        </Button>
-        <Button size="sm" variant="ghost" onClick={() => handleFormatting('formatBlock', '<h2>')} className="h-8 px-2">
-          <Heading2 className="h-4 w-4" />
-        </Button>
-        <Button size="sm" variant="ghost" onClick={() => handleFormatting('formatBlock', '<h3>')} className="h-8 px-2">
-          <Heading3 className="h-4 w-4" />
-        </Button>
-        <Separator orientation="vertical" className="h-6" />
-        <Button size="sm" variant="ghost" onClick={() => handleFormatting('justifyLeft')} className="h-8 w-8 p-0">
-          <AlignLeft className="h-4 w-4" />
-        </Button>
-        <Button size="sm" variant="ghost" onClick={() => handleFormatting('justifyCenter')} className="h-8 w-8 p-0">
-          <AlignCenter className="h-4 w-4" />
-        </Button>
-        <Button size="sm" variant="ghost" onClick={() => handleFormatting('justifyRight')} className="h-8 w-8 p-0">
-          <AlignRight className="h-4 w-4" />
-        </Button>
-        <Separator orientation="vertical" className="h-6" />
-        <Button size="sm" variant="ghost" onClick={() => handleFormatting('insertUnorderedList')} className="h-8 w-8 p-0">
-          <List className="h-4 w-4" />
-        </Button>
-        <Button size="sm" variant="ghost" onClick={() => handleFormatting('insertOrderedList')} className="h-8 w-8 p-0">
-          <ListOrdered className="h-4 w-4" />
-        </Button>
-        <Button size="sm" variant="ghost" onClick={() => handleFormatting('formatBlock', '<blockquote>')} className="h-8 w-8 p-0">
-          <Quote className="h-4 w-4" />
-        </Button>
-        <Separator orientation="vertical" className="h-6" />
-        <Button size="sm" variant="ghost" onClick={() => handleFormatting('createLink', prompt('Enter URL:') || '')} className="h-8 w-8 p-0">
-          <Link className="h-4 w-4" />
-        </Button>
-        <Button size="sm" variant="ghost" onClick={() => handleFormatting('insertImage', prompt('Enter image URL:') || '')} className="h-8 w-8 p-0">
-          <Image className="h-4 w-4" />
-        </Button>
-      </div>
-      <div
-        contentEditable
-        className="min-h-[200px] p-4 outline-none prose prose-sm max-w-none dark:prose-invert"
-        dangerouslySetInnerHTML={{ __html: content }}
-        onBlur={(e) => {
-          const newContent = e.currentTarget.innerHTML;
-          setContent(newContent);
-          onChange(newContent);
-        }}
-        onInput={(e) => {
-          const newContent = e.currentTarget.innerHTML;
-          setContent(newContent);
-        }}
-        style={{ minHeight: '200px' }}
-      />
-    </div>
-  );
-};
-
-// Sortable Lesson Item
-const SortableLessonItem = ({ lesson, moduleId, onUpdateLesson, onDeleteLesson, onEditContent }: {
-  lesson: Lesson;
-  moduleId: string;
-  onUpdateLesson: (moduleId: string, lessonId: string, updates: Partial<Lesson>) => void;
-  onDeleteLesson: (moduleId: string, lessonId: string) => void;
-  onEditContent: (moduleId: string, lesson: Lesson) => void;
-}) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: lesson.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1
-  };
-
-  const lessonType = LESSON_TYPES.find(t => t.type === lesson.type);
-  const LessonIcon = lessonType?.icon || FileText;
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-all"
-    >
-      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
-        <GripVertical className="w-4 h-4 text-gray-400" />
-      </div>
-
-      <div className="flex items-center gap-2 min-w-0">
-        <LessonIcon className="w-4 h-4 text-gray-600" />
-        <Badge className={`text-xs ${lessonType?.color}`}>
-          {lessonType?.label}
-        </Badge>
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <Input
-          value={lesson.title}
-          onChange={(e) => onUpdateLesson(moduleId, lesson.id, { title: e.target.value })}
-          className="border-0 p-0 h-auto font-medium bg-transparent"
-          placeholder="Lesson title"
-        />
-      </div>
-
-      <div className="flex items-center gap-2 text-sm text-gray-600">
-        <Clock className="w-3 h-3" />
-        <Input
-          type="number"
-          value={lesson.duration}
-          onChange={(e) => onUpdateLesson(moduleId, lesson.id, { duration: Number(e.target.value) })}
-          className="w-16 h-6 text-xs border-0 p-1 bg-transparent"
-          min="1"
-        />
-        <span>min</span>
-      </div>
-
-      <div className="flex items-center gap-1">
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => onEditContent(moduleId, lesson)}
-          className="h-8 w-8 p-0"
-        >
-          <Edit className="w-4 h-4" />
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => onUpdateLesson(moduleId, lesson.id, { isLocked: !lesson.isLocked })}
-          className="h-8 w-8 p-0"
-        >
-          {lesson.isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => onDeleteLesson(moduleId, lesson.id)}
-          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
-      </div>
-    </div>
-  );
-};
-
-// Sortable Module Item
-const SortableModuleItem = ({ module, onUpdateModule, onDeleteModule, onAddLesson, onUpdateLesson, onDeleteLesson, onEditContent }: {
-  module: Module;
-  onUpdateModule: (moduleId: string, updates: Partial<Module>) => void;
-  onDeleteModule: (moduleId: string) => void;
-  onAddLesson: (moduleId: string, type: Lesson['type']) => void;
-  onUpdateLesson: (moduleId: string, lessonId: string, updates: Partial<Lesson>) => void;
-  onDeleteLesson: (moduleId: string, lessonId: string) => void;
-  onEditContent: (moduleId: string, lesson: Lesson) => void;
-}) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: `module-${module.id}` });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1
-  };
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const handleLessonDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeId = active.id as string;
-    const overId = over.id as string;
-
-    if (activeId === overId) return;
-
-    const oldIndex = module.lessons.findIndex(l => l.id === activeId);
-    const newIndex = module.lessons.findIndex(l => l.id === overId);
-
-    if (oldIndex !== -1 && newIndex !== -1) {
-      const newLessons = arrayMove(module.lessons, oldIndex, newIndex);
-      onUpdateModule(module.id, { lessons: newLessons });
-    }
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-3 mb-3">
-          <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
-            <GripVertical className="w-4 h-4 text-gray-400" />
-          </div>
-          <div className="flex-1">
-            <Input
-              value={module.title}
-              onChange={(e) => onUpdateModule(module.id, { title: e.target.value })}
-              className="font-semibold text-lg border-0 p-0 h-auto bg-transparent"
-              placeholder="Module title"
-            />
-            <Input
-              value={module.description}
-              onChange={(e) => onUpdateModule(module.id, { description: e.target.value })}
-              className="text-sm text-gray-600 dark:text-gray-400 border-0 p-0 h-auto mt-1 bg-transparent"
-              placeholder="Module description"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onUpdateModule(module.id, { isExpanded: !module.isExpanded })}
-              className="h-8 w-8 p-0"
-            >
-              {module.isExpanded ? <Eye className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onDeleteModule(module.id)}
-              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Add Lesson Buttons */}
-        <div className="flex flex-wrap gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onAddLesson(module.id, 'video')}
-            className="h-8"
-          >
-            <Video className="w-4 h-4 mr-1" />
-            Lesson
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onAddLesson(module.id, 'quiz')}
-            className="h-8"
-          >
-            <HelpCircle className="w-4 h-4 mr-1" />
-            Quiz
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onAddLesson(module.id, 'interactive_quiz')}
-            className="h-8"
-          >
-            <MessageCircle className="w-4 h-4 mr-1" />
-            Interactive Quiz
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onAddLesson(module.id, 'assignment')}
-            className="h-8"
-          >
-            <ClipboardCheck className="w-4 h-4 mr-1" />
-            Assignment
-          </Button>
-        </div>
-      </div>
-
-      {module.isExpanded && (
-        <div className="p-4">
-          {module.lessons.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>No lessons yet. Add your first lesson above.</p>
-            </div>
-          ) : (
-            <DndContext 
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleLessonDragEnd}
-            >
-              <SortableContext 
-                items={module.lessons.map(l => l.id)} 
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-2">
-                  {module.lessons.map((lesson) => (
-                    <SortableLessonItem
-                      key={lesson.id}
-                      lesson={lesson}
-                      moduleId={module.id}
-                      onUpdateLesson={onUpdateLesson}
-                      onDeleteLesson={onDeleteLesson}
-                      onEditContent={onEditContent}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
 
 export function DragAndDropCourseBuilder() {
   const [isLoading, setIsLoading] = useState(false);
@@ -531,55 +101,90 @@ export function DragAndDropCourseBuilder() {
   const [aiGenerating, setAiGenerating] = useState(false);
 
   const [course, setCourse] = useState<Course>({
-    id: Date.now().toString(),
-    title: 'New Course',
-    description: 'Course description',
-    richDescription: '<p>Rich course description with <strong>formatting</strong></p>',
-    price: 97,
+    id: '1',
+    title: 'Complete Digital Marketing Course',
+    description: 'Master digital marketing from basics to advanced strategies',
+    price: 297,
     currency: 'USD',
-    authorName: 'Instructor Name',
-    authorBio: 'Experienced instructor with expertise in the field',
-    language: 'en',
-    level: 'beginner',
-    category: 'Business',
-    tags: [],
+    authorName: 'John Doe',
+    authorBio: 'Digital Marketing Expert with 10+ years experience',
     enrollmentLimit: 100,
     enrollmentType: 'automatic',
     isPublished: false,
     enrollmentOpen: true,
-    currentEnrollments: 0,
-    certificateEnabled: true,
-    completionCriteria: 80,
-    estimatedDuration: 120,
+    currentEnrollments: 23,
     createdAt: new Date(),
     lastModified: new Date(),
-    status: 'draft',
-    modules: []
+    modules: [
+      {
+        id: '1',
+        title: 'Introduction to Digital Marketing',
+        description: 'Learn the fundamentals of digital marketing',
+        isExpanded: true,
+        order: 0,
+        isLocked: false,
+        lessons: [
+          { 
+            id: '1-1', 
+            title: 'What is Digital Marketing?', 
+            type: 'video', 
+            duration: 15, 
+            isCompleted: false, 
+            isLocked: false,
+            order: 0,
+            videoUrl: 'https://www.youtube.com/watch?v=example'
+          },
+          { 
+            id: '1-2', 
+            title: 'Digital Marketing Channels', 
+            type: 'text', 
+            duration: 10, 
+            isCompleted: false, 
+            isLocked: false,
+            order: 1,
+            content: 'Digital marketing encompasses various channels...'
+          },
+          { 
+            id: '1-3', 
+            title: 'Knowledge Check', 
+            type: 'quiz', 
+            duration: 5, 
+            isCompleted: false, 
+            isLocked: false,
+            order: 2
+          }
+        ]
+      },
+      {
+        id: '2',
+        title: 'Content Marketing Strategy',
+        description: 'Create compelling content that converts',
+        isExpanded: false,
+        order: 1,
+        isLocked: false,
+        lessons: [
+          { 
+            id: '2-1', 
+            title: 'Content Planning', 
+            type: 'video', 
+            duration: 20, 
+            isCompleted: false, 
+            isLocked: false,
+            order: 0
+          },
+          { 
+            id: '2-2', 
+            title: 'Content Creation Workshop', 
+            type: 'assignment', 
+            duration: 30, 
+            isCompleted: false, 
+            isLocked: false,
+            order: 1
+          }
+        ]
+      }
+    ]
   });
-
-  // Auto-save functionality
-  useEffect(() => {
-    const autoSave = setTimeout(() => {
-      saveCourse();
-    }, 2000);
-
-    return () => clearTimeout(autoSave);
-  }, [course]);
-
-  const saveCourse = () => {
-    const existingCourses = JSON.parse(localStorage.getItem('draftCourses') || '[]');
-    const courseIndex = existingCourses.findIndex((c: Course) => c.id === course.id);
-
-    const updatedCourse = { ...course, lastModified: new Date() };
-
-    if (courseIndex >= 0) {
-      existingCourses[courseIndex] = updatedCourse;
-    } else {
-      existingCourses.push(updatedCourse);
-    }
-
-    localStorage.setItem('draftCourses', JSON.stringify(existingCourses));
-  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -601,14 +206,37 @@ export function DragAndDropCourseBuilder() {
     if (activeId.startsWith('module-') && overId.startsWith('module-')) {
       const activeModuleId = activeId.replace('module-', '');
       const overModuleId = overId.replace('module-', '');
-
+      
       setCourse(prev => {
         const oldIndex = prev.modules.findIndex(m => m.id === activeModuleId);
         const newIndex = prev.modules.findIndex(m => m.id === overModuleId);
-
+        
         const newModules = arrayMove(prev.modules, oldIndex, newIndex);
         return { ...prev, modules: newModules, lastModified: new Date() };
       });
+    }
+
+    // Handle lesson reordering within modules
+    if (activeId.includes('-') && overId.includes('-')) {
+      const [activeModuleId, activeLessonId] = activeId.split('-');
+      const [overModuleId, overLessonId] = overId.split('-');
+      
+      if (activeModuleId === overModuleId) {
+        setCourse(prev => {
+          const moduleIndex = prev.modules.findIndex(m => m.id === activeModuleId);
+          if (moduleIndex === -1) return prev;
+          
+          const module = prev.modules[moduleIndex];
+          const oldIndex = module.lessons.findIndex(l => l.id === activeId);
+          const newIndex = module.lessons.findIndex(l => l.id === overId);
+          
+          const newLessons = arrayMove(module.lessons, oldIndex, newIndex);
+          const updatedModules = [...prev.modules];
+          updatedModules[moduleIndex] = { ...module, lessons: newLessons };
+          
+          return { ...prev, modules: updatedModules, lastModified: new Date() };
+        });
+      }
     }
   };
 
@@ -627,7 +255,6 @@ export function DragAndDropCourseBuilder() {
       modules: [...prev.modules, newModule],
       lastModified: new Date()
     }));
-    toast.success('Module added successfully!');
   };
 
   const updateModule = (moduleId: string, updates: Partial<Module>) => {
@@ -646,27 +273,17 @@ export function DragAndDropCourseBuilder() {
       modules: prev.modules.filter(module => module.id !== moduleId),
       lastModified: new Date()
     }));
-    toast.success('Module deleted successfully!');
   };
 
   const addLesson = (moduleId: string, type: Lesson['type'] = 'video') => {
     const newLesson: Lesson = {
-      id: `${moduleId}-lesson-${Date.now()}`,
-      title: `New ${type.charAt(0).toUpperCase() + type.slice(1)}`,
+      id: `${Date.now()}-lesson`,
+      title: 'New Lesson',
       type,
       duration: 10,
-      description: '',
-      content: '',
       isCompleted: false,
       isLocked: false,
-      order: 0,
-      settings: {
-        timeLimit: 0,
-        attempts: 3,
-        passingGrade: 70,
-        feedback: '',
-        retryAllowed: true
-      }
+      order: 0
     };
 
     setCourse(prev => ({
@@ -678,7 +295,6 @@ export function DragAndDropCourseBuilder() {
       ),
       lastModified: new Date()
     }));
-    toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} added successfully!');
   };
 
   const updateLesson = (moduleId: string, lessonId: string, updates: Partial<Lesson>) => {
@@ -708,7 +324,6 @@ export function DragAndDropCourseBuilder() {
       ),
       lastModified: new Date()
     }));
-    toast.success('Lesson deleted successfully!');
   };
 
   const openContentEditor = (moduleId: string, lesson: Lesson) => {
@@ -724,22 +339,43 @@ export function DragAndDropCourseBuilder() {
         htmlContent: selectedLesson.type === 'html' ? content : undefined
       });
       setShowContentEditor(false);
-      toast.success('Content saved successfully!');
     }
   };
 
   const generateAIContent = async () => {
     if (!selectedLesson) return;
-
+    
     setAiGenerating(true);
+    // Simulate AI generation
     setTimeout(() => {
-      const generatedContent = `<h2>AI-generated content for "${selectedLesson.title}"</h2><p>This is a comprehensive lesson covering all the essential aspects of the topic with detailed explanations, examples, and practical applications.</p><ul><li>Key concept 1</li><li>Key concept 2</li><li>Key concept 3</li></ul><p>Remember to practice what you learn!</p>`;
-      if (selectedLesson && selectedModuleId) {
-        updateLesson(selectedModuleId, selectedLesson.id, { content: generatedContent });
-      }
+      const generatedContent = `AI-generated content for "${selectedLesson.title}". This is a comprehensive lesson covering all the essential aspects of the topic with detailed explanations, examples, and practical applications.`;
+      saveContent(generatedContent);
       setAiGenerating(false);
-      toast.success('AI content generated successfully!');
     }, 2000);
+  };
+
+  const getLessonIcon = (type: string) => {
+    switch (type) {
+      case 'video': return <Video className="w-4 h-4" />;
+      case 'text': return <FileText className="w-4 h-4" />;
+      case 'quiz': return <HelpCircle className="w-4 h-4" />;
+      case 'assignment': return <Upload className="w-4 h-4" />;
+      case 'html': return <Code className="w-4 h-4" />;
+      case 'link': return <Link className="w-4 h-4" />;
+      default: return <BookOpen className="w-4 h-4" />;
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'video': return 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300';
+      case 'text': return 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300';
+      case 'quiz': return 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300';
+      case 'assignment': return 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300';
+      case 'html': return 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300';
+      case 'link': return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300';
+      default: return 'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300';
+    }
   };
 
   const totalLessons = course.modules.reduce((total, module) => total + module.lessons.length, 0);
@@ -749,7 +385,7 @@ export function DragAndDropCourseBuilder() {
 
   if (showPreview) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6 p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between mb-6">
           <Button 
             variant="outline" 
@@ -763,25 +399,108 @@ export function DragAndDropCourseBuilder() {
           </Button>
         </div>
 
-        {/* Course Preview Content */}
+        {/* Course Header */}
         <Card>
           <CardContent className="p-8">
-            <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
-            <div className="text-lg text-gray-600 dark:text-gray-400 mb-6" 
-                 dangerouslySetInnerHTML={{ __html: course.richDescription || course.description }} />
-            <div className="flex flex-wrap gap-4 mb-6">
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4" />
-                <span>{course.modules.length} modules</span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="md:col-span-2">
+                <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
+                <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
+                  {course.description}
+                </p>
+                <div className="flex flex-wrap gap-4 mb-6">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    <span>{course.modules.length} modules</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Play className="w-4 h-4" />
+                    <span>{totalLessons} lessons</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    <span>{Math.floor(totalDuration / 60)}h {totalDuration % 60}m</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    <span>{course.currentEnrollments}/{course.enrollmentLimit} enrolled</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-medium">Instructor</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {course.authorName} - {course.authorBio}
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Play className="w-4 h-4" />
-                <span>{totalLessons} lessons</span>
+              <div className="space-y-4">
+                <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg">
+                  <div className="text-3xl font-bold text-coral-600 mb-2">
+                    ${course.price}
+                  </div>
+                  <Button className="w-full bg-coral-500 hover:bg-coral-600 mb-4">
+                    Enroll Now
+                  </Button>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Enrollment:</span>
+                      <span>{course.enrollmentOpen ? 'Open' : 'Closed'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Type:</span>
+                      <span className="capitalize">{course.enrollmentType}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Spots left:</span>
+                      <span>{course.enrollmentLimit - course.currentEnrollments}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                <span>{Math.floor(totalDuration / 60)}h {totalDuration % 60}m</span>
-              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Course Curriculum */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Course Curriculum</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {course.modules.map((module, index) => (
+                <div key={module.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">Module {index + 1}: {module.title}</h4>
+                    <div className="flex items-center gap-2">
+                      {module.isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                      <span className="text-sm text-gray-600">
+                        {module.lessons.length} lessons
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    {module.description}
+                  </p>
+                  <div className="space-y-2">
+                    {module.lessons.map((lesson, lessonIndex) => (
+                      <div key={lesson.id} className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                        <div className="flex items-center gap-2">
+                          {getLessonIcon(lesson.type)}
+                          <Badge className={`text-xs ${getTypeColor(lesson.type)}`}>
+                            {lesson.type}
+                          </Badge>
+                        </div>
+                        <span className="flex-1">{lesson.title}</span>
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          {lesson.isLocked ? <Lock className="w-3 h-3" /> : null}
+                          <span>{lesson.duration} min</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -790,21 +509,21 @@ export function DragAndDropCourseBuilder() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 p-6">
-      {/* Header */}
+    <div className="max-w-6xl mx-auto space-y-6 relative">
+      {/* Course Header */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BookOpen className="w-5 h-5" />
             Course Builder
-            <Badge variant="outline" className="ml-2">
-              {course.status === 'draft' ? 'Auto-saving...' : course.status}
-            </Badge>
           </CardTitle>
+          <CardDescription>
+            Create and manage your online course with advanced features
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          {/* Course Basic Info */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <CardContent className="space-y-6">
+          {/* Basic Course Info */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="courseTitle">Course Title</Label>
@@ -815,16 +534,16 @@ export function DragAndDropCourseBuilder() {
                   placeholder="Enter course title"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="courseDescription">Course Description</Label>
-                <RichTextEditor
-                  value={course.richDescription || ''}
-                  onChange={(value) => setCourse(prev => ({ ...prev, richDescription: value, lastModified: new Date() }))}
-                  placeholder="Describe what students will learn..."
+                <Textarea
+                  id="courseDescription"
+                  value={course.description}
+                  onChange={(e) => setCourse(prev => ({ ...prev, description: e.target.value, lastModified: new Date() }))}
+                  placeholder="Describe what students will learn"
+                  rows={3}
                 />
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="coursePrice">Price ($)</Label>
@@ -845,118 +564,78 @@ export function DragAndDropCourseBuilder() {
                   />
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Category</Label>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Course Thumbnail</Label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <Image className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-600">Click to upload thumbnail</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Enrollment Type</Label>
                   <Select 
-                    value={course.category} 
-                    onValueChange={(value) => 
-                      setCourse(prev => ({ ...prev, category: value, lastModified: new Date() }))
+                    value={course.enrollmentType} 
+                    onValueChange={(value: 'manual' | 'automatic') => 
+                      setCourse(prev => ({ ...prev, enrollmentType: value, lastModified: new Date() }))
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-32">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORIES.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="automatic">Automatic</SelectItem>
+                      <SelectItem value="manual">Manual</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>Level</Label>
-                  <Select 
-                    value={course.level} 
-                    onValueChange={(value: 'beginner' | 'intermediate' | 'advanced') => 
-                      setCourse(prev => ({ ...prev, level: value, lastModified: new Date() }))
+                
+                <div className="flex items-center justify-between">
+                  <Label>Enrollment Open</Label>
+                  <Switch
+                    checked={course.enrollmentOpen}
+                    onCheckedChange={(checked) => 
+                      setCourse(prev => ({ ...prev, enrollmentOpen: checked, lastModified: new Date() }))
                     }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="beginner">Beginner</SelectItem>
-                      <SelectItem value="intermediate">Intermediate</SelectItem>
-                      <SelectItem value="advanced">Advanced</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label>Published</Label>
+                  <Switch
+                    checked={course.isPublished}
+                    onCheckedChange={(checked) => 
+                      setCourse(prev => ({ ...prev, isPublished: checked, lastModified: new Date() }))
+                    }
+                  />
                 </div>
               </div>
             </div>
+          </div>
 
-            <div className="space-y-4">
-              {/* Author Information */}
-              <div className="space-y-4 p-4 border rounded-lg">
-                <h4 className="font-medium">Author Information</h4>
-                <div className="space-y-2">
-                  <Label htmlFor="authorName">Author Name</Label>
-                  <Input
-                    id="authorName"
-                    value={course.authorName}
-                    onChange={(e) => setCourse(prev => ({ ...prev, authorName: e.target.value, lastModified: new Date() }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="authorBio">Author Bio</Label>
-                  <Textarea
-                    id="authorBio"
-                    value={course.authorBio}
-                    onChange={(e) => setCourse(prev => ({ ...prev, authorBio: e.target.value, lastModified: new Date() }))}
-                    rows={3}
-                    placeholder="Brief author biography"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Author Image</Label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                    <Image className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-600">Upload author image</p>
-                    <Button size="sm" variant="outline" className="mt-2">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Choose File
-                    </Button>
-                  </div>
-                </div>
+          {/* Author Information */}
+          <div className="border-t pt-6">
+            <h4 className="font-medium mb-4">Author Information</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="authorName">Author Name</Label>
+                <Input
+                  id="authorName"
+                  value={course.authorName}
+                  onChange={(e) => setCourse(prev => ({ ...prev, authorName: e.target.value, lastModified: new Date() }))}
+                />
               </div>
-
-              {/* Course Settings */}
-              <div className="space-y-4 p-4 border rounded-lg">
-                <h4 className="font-medium">Course Settings</h4>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label>Certificate Enabled</Label>
-                    <Switch
-                      checked={course.certificateEnabled}
-                      onCheckedChange={(checked) => 
-                        setCourse(prev => ({ ...prev, certificateEnabled: checked, lastModified: new Date() }))
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <Label>Enrollment Open</Label>
-                    <Switch
-                      checked={course.enrollmentOpen}
-                      onCheckedChange={(checked) => 
-                        setCourse(prev => ({ ...prev, enrollmentOpen: checked, lastModified: new Date() }))
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <Label>Published</Label>
-                    <Switch
-                      checked={course.isPublished}
-                      onCheckedChange={(checked) => 
-                        setCourse(prev => ({ ...prev, isPublished: checked, status: checked ? 'published' : 'draft', lastModified: new Date() }))
-                      }
-                    />
-                  </div>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="authorBio">Author Bio</Label>
+                <Input
+                  id="authorBio"
+                  value={course.authorBio}
+                  onChange={(e) => setCourse(prev => ({ ...prev, authorBio: e.target.value, lastModified: new Date() }))}
+                />
               </div>
             </div>
           </div>
@@ -989,11 +668,60 @@ export function DragAndDropCourseBuilder() {
         </CardContent>
       </Card>
 
+      {/* AI Tools */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="w-5 h-5 text-purple-600" />
+            AI Course Tools
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button variant="outline" className="justify-start h-auto p-4">
+              <div className="flex items-center gap-3">
+                <Zap className="w-5 h-5 text-purple-500" />
+                <div className="text-left">
+                  <div className="font-medium">AI Quiz Generator</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    Generate quizzes from content
+                  </div>
+                </div>
+              </div>
+            </Button>
+            
+            <Button variant="outline" className="justify-start h-auto p-4">
+              <div className="flex items-center gap-3">
+                <Zap className="w-5 h-5 text-blue-500" />
+                <div className="text-left">
+                  <div className="font-medium">AI Content Generator</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    Generate lesson content
+                  </div>
+                </div>
+              </div>
+            </Button>
+            
+            <Button variant="outline" className="justify-start h-auto p-4">
+              <div className="flex items-center gap-3">
+                <Zap className="w-5 h-5 text-green-500" />
+                <div className="text-left">
+                  <div className="font-medium">AI Tutor Assistant</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    Set up AI student support
+                  </div>
+                </div>
+              </div>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Course Structure */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Course Curriculum</span>
+            <span>Course Structure</span>
             <div className="flex gap-2">
               <Button onClick={addModule} size="sm">
                 <Plus className="w-4 h-4 mr-2" />
@@ -1012,27 +740,22 @@ export function DragAndDropCourseBuilder() {
               items={course.modules.map(m => `module-${m.id}`)} 
               strategy={verticalListSortingStrategy}
             >
-              <div className="space-y-4 max-h-[600px] overflow-y-auto">
-                {course.modules.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500">
-                    <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium">No modules yet</p>
-                    <p className="text-sm">Click "Add Module" to get started</p>
-                  </div>
-                ) : (
-                  course.modules.map((module) => (
-                    <SortableModuleItem
-                      key={module.id}
-                      module={module}
-                      onUpdateModule={updateModule}
-                      onDeleteModule={deleteModule}
-                      onAddLesson={addLesson}
-                      onUpdateLesson={updateLesson}
-                      onDeleteLesson={deleteLesson}
-                      onEditContent={openContentEditor}
-                    />
-                  ))
-                )}
+              <div className="space-y-4">
+                {course.modules.map((module, moduleIndex) => (
+                  <SortableModuleItem
+                    key={module.id}
+                    module={module}
+                    moduleIndex={moduleIndex}
+                    onUpdateModule={updateModule}
+                    onDeleteModule={deleteModule}
+                    onAddLesson={addLesson}
+                    onUpdateLesson={updateLesson}
+                    onDeleteLesson={deleteLesson}
+                    onEditContent={openContentEditor}
+                    getLessonIcon={getLessonIcon}
+                    getTypeColor={getTypeColor}
+                  />
+                ))}
               </div>
             </SortableContext>
           </DndContext>
@@ -1052,7 +775,7 @@ export function DragAndDropCourseBuilder() {
           </Button>
           <Button 
             className="bg-coral-500 hover:bg-coral-600"
-            onClick={() => setCourse(prev => ({ ...prev, isPublished: true, status: 'published', lastModified: new Date() }))}
+            onClick={() => setCourse(prev => ({ ...prev, isPublished: true, lastModified: new Date() }))}
           >
             <Play className="w-4 h-4 mr-2" />
             {course.isPublished ? 'Update Course' : 'Publish Course'}
@@ -1060,223 +783,140 @@ export function DragAndDropCourseBuilder() {
         </div>
       </div>
 
-      {/* Two-Column Content Editor Dialog */}
-      <Dialog open={showContentEditor} onOpenChange={setShowContentEditor}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Edit Lesson Content</DialogTitle>
-          </DialogHeader>
-          {selectedLesson && (
-            <div className="grid grid-cols-2 gap-6 h-[70vh]">
-              {/* Left Column - Content Editor */}
-              <div className="space-y-4 overflow-y-auto border-r pr-6">
-                <div className="space-y-2">
-                  <Label>Lesson Title</Label>
-                  <Input
-                    value={selectedLesson.title}
-                    onChange={(e) => setSelectedLesson({ ...selectedLesson, title: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Lesson Type</Label>
-                  <Select 
-                    value={selectedLesson.type} 
-                    onValueChange={(value: Lesson['type']) => 
-                      setSelectedLesson({ ...selectedLesson, type: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LESSON_TYPES.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          <div className="flex items-center gap-2">
-                            <type.icon className="w-4 h-4" />
-                            {type.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {selectedLesson.type === 'video' && (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>YouTube URL</Label>
-                      <Input
-                        value={selectedLesson.youtubeUrl || ''}
-                        onChange={(e) => setSelectedLesson({ ...selectedLesson, youtubeUrl: e.target.value })}
-                        placeholder="https://youtube.com/watch?v=..."
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Vimeo URL</Label>
-                      <Input
-                        value={selectedLesson.vimeoUrl || ''}
-                        onChange={(e) => setSelectedLesson({ ...selectedLesson, vimeoUrl: e.target.value })}
-                        placeholder="https://vimeo.com/..."
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Embed Code</Label>
-                      <Textarea
-                        value={selectedLesson.embedCode || ''}
-                        onChange={(e) => setSelectedLesson({ ...selectedLesson, embedCode: e.target.value })}
-                        placeholder="<iframe src=... or other embed code"
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {selectedLesson.type === 'quiz' && (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Time Limit (minutes)</Label>
-                      <Input
-                        type="number"
-                        value={selectedLesson.settings?.timeLimit || 0}
-                        onChange={(e) => setSelectedLesson({ 
-                          ...selectedLesson, 
-                          settings: { ...selectedLesson.settings, timeLimit: Number(e.target.value) }
-                        })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Max Attempts</Label>
-                      <Input
-                        type="number"
-                        value={selectedLesson.settings?.attempts || 3}
-                        onChange={(e) => setSelectedLesson({ 
-                          ...selectedLesson, 
-                          settings: { ...selectedLesson.settings, attempts: Number(e.target.value) }
-                        })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Passing Grade (%)</Label>
-                      <Input
-                        type="number"
-                        value={selectedLesson.settings?.passingGrade || 70}
-                        onChange={(e) => setSelectedLesson({ 
-                          ...selectedLesson, 
-                          settings: { ...selectedLesson.settings, passingGrade: Number(e.target.value) }
-                        })}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label>Retry Allowed</Label>
-                      <Switch
-                        checked={selectedLesson.settings?.retryAllowed ?? true}
-                        onCheckedChange={(checked) => setSelectedLesson({ 
-                          ...selectedLesson, 
-                          settings: { ...selectedLesson.settings, retryAllowed: checked }
-                        })}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Content</Label>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={generateAIContent}
-                      disabled={aiGenerating}
-                    >
-                      <Zap className="w-3 h-3 mr-1" />
-                      {aiGenerating ? 'Generating...' : 'AI Generate'}
-                    </Button>
-                  </div>
-                  <RichTextEditor
-                    value={selectedLesson.content || ''}
-                    onChange={(content) => setSelectedLesson({ ...selectedLesson, content })}
-                    placeholder="Enter lesson content..."
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Duration (minutes)</Label>
-                  <Input
-                    type="number"
-                    value={selectedLesson.duration}
-                    onChange={(e) => setSelectedLesson({ ...selectedLesson, duration: Number(e.target.value) })}
-                  />
-                </div>
-              </div>
-
-              {/* Right Column - Settings & Preview */}
-              <div className="space-y-4 overflow-y-auto pl-6">
-                <div className="space-y-2">
-                  <Label>Featured Image</Label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <Image className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-600">Upload lesson thumbnail</p>
-                    <Button size="sm" variant="outline" className="mt-2">
-                      <Upload className="w-4 h-4 mr-2" />
-                      Upload Image
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Preview</Label>
-                  <div className="border rounded-lg p-4 bg-gray-50 min-h-[300px]">
-                    <h3 className="font-bold mb-2">{selectedLesson.title}</h3>
-                    <div className="flex items-center gap-2 mb-4">
-                      {LESSON_TYPES.find(t => t.value === selectedLesson.type)?.icon && (
-                        React.createElement(LESSON_TYPES.find(t => t.value === selectedLesson.type)!.icon, { className: "w-4 h-4" })
-                      )}
-                      <Badge className={`text-xs ${LESSON_TYPES.find(t => t.value === selectedLesson.type)?.color}`}>
-                        {LESSON_TYPES.find(t => t.value === selectedLesson.type)?.label}
-                      </Badge>
-                      <span className="text-sm text-gray-600">{selectedLesson.duration} min</span>
-                    </div>
-
-                    {selectedLesson.content && (
-                      <div 
-                        className="prose prose-sm max-w-none dark:prose-invert"
-                        dangerouslySetInnerHTML={{ __html: selectedLesson.content }}
-                      />
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label>Lesson Locked</Label>
-                  <Switch
-                    checked={selectedLesson.isLocked}
-                    onCheckedChange={(checked) => setSelectedLesson({ ...selectedLesson, isLocked: checked })}
-                  />
-                </div>
-              </div>
+      {/* Content Editor Sidebar */}
+      {showContentEditor && selectedLesson && (
+        <div className="fixed inset-y-0 right-0 w-96 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-xl z-50 flex flex-col">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">Edit Content</h3>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setShowContentEditor(false)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
             </div>
-          )}
-
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button variant="outline" onClick={() => setShowContentEditor(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={() => {
-                if (selectedLesson && selectedModuleId) {
-                  updateLesson(selectedModuleId, selectedLesson.id, selectedLesson);
-                  setShowContentEditor(false);
-                  toast.success('Lesson updated successfully!');
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              {selectedLesson.title}
+            </p>
+          </div>
+          
+          <div className="flex-1 p-4 space-y-4">
+            <div className="space-y-2">
+              <Label>Lesson Type</Label>
+              <Select 
+                value={selectedLesson.type} 
+                onValueChange={(value: Lesson['type']) => 
+                  updateLesson(selectedModuleId, selectedLesson.id, { type: value })
                 }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="video">Video</SelectItem>
+                  <SelectItem value="text">Text</SelectItem>
+                  <SelectItem value="html">HTML</SelectItem>
+                  <SelectItem value="link">External Link</SelectItem>
+                  <SelectItem value="quiz">Quiz</SelectItem>
+                  <SelectItem value="assignment">Assignment</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedLesson.type === 'video' && (
+              <div className="space-y-2">
+                <Label>Video URL</Label>
+                <Input
+                  value={selectedLesson.videoUrl || ''}
+                  onChange={(e) => updateLesson(selectedModuleId, selectedLesson.id, { videoUrl: e.target.value })}
+                  placeholder="YouTube, Vimeo, or direct video URL"
+                />
+              </div>
+            )}
+
+            {selectedLesson.type === 'link' && (
+              <div className="space-y-2">
+                <Label>External Link</Label>
+                <Input
+                  value={selectedLesson.externalLink || ''}
+                  onChange={(e) => updateLesson(selectedModuleId, selectedLesson.id, { externalLink: e.target.value })}
+                  placeholder="https://example.com"
+                />
+              </div>
+            )}
+
+            {(selectedLesson.type === 'text' || selectedLesson.type === 'html') && (
+              <div className="space-y-2 flex-1">
+                <div className="flex items-center justify-between">
+                  <Label>Content</Label>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={generateAIContent}
+                    disabled={aiGenerating}
+                  >
+                    <Zap className="w-3 h-3 mr-1" />
+                    {aiGenerating ? 'Generating...' : 'AI Generate'}
+                  </Button>
+                </div>
+                <Textarea
+                  value={selectedLesson.type === 'html' ? selectedLesson.htmlContent || '' : selectedLesson.content || ''}
+                  onChange={(e) => {
+                    const field = selectedLesson.type === 'html' ? 'htmlContent' : 'content';
+                    updateLesson(selectedModuleId, selectedLesson.id, { [field]: e.target.value });
+                  }}
+                  placeholder={selectedLesson.type === 'html' ? 'Enter HTML content...' : 'Enter lesson content...'}
+                  rows={15}
+                  className="resize-none"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Duration (minutes)</Label>
+              <Input
+                type="number"
+                value={selectedLesson.duration}
+                onChange={(e) => updateLesson(selectedModuleId, selectedLesson.id, { duration: Number(e.target.value) })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label>Locked</Label>
+              <Switch
+                checked={selectedLesson.isLocked}
+                onCheckedChange={(checked) => updateLesson(selectedModuleId, selectedLesson.id, { isLocked: checked })}
+              />
+            </div>
+          </div>
+
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+            <Button 
+              className="w-full"
+              onClick={() => {
+                const content = selectedLesson.type === 'html' ? selectedLesson.htmlContent : selectedLesson.content;
+                saveContent(content || '');
               }}
             >
               <Save className="w-4 h-4 mr-2" />
               Save Changes
             </Button>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => {
+                const content = selectedLesson.type === 'html' ? selectedLesson.htmlContent : selectedLesson.content;
+                navigator.clipboard.writeText(content || '');
+              }}
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              Copy Content
+            </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </div>
   );
 }
